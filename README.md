@@ -316,34 +316,34 @@ drivesync config logs max-size set 10
 
 First synchronization of an id:
 
-- DriveSync tente automatiquement un `--resync` si l'etat bisync est absent
-- si local et remote sont deja non vides, DriveSync n'auto-force pas et demande une confirmation explicite
-- dans ce cas, lancer : `drivesync sync run <id> --resync --force`
+- DriveSync automatically attempts a `--resync` when bisync state is missing
+- if local and remote are already non-empty, DriveSync does not auto-force and requires explicit confirmation
+- in this case, run: `drivesync sync run <id> --resync --force`
 
-Par defaut, le dossier remote cible est DriveSync/<id>.
-`config root` configure le remote root directory in cloud storage utilise pour tous les repertoires.
-Vous pouvez donc changer ce dossier racine distant avec `config root set`.
-Avec --remote-dir, vous pouvez binder un repertoire local vers un sous-dossier remote specifique.
-Un `remote-dir` ne peut etre utilise qu'une seule fois dans la configuration DriveSync.
+By default, the remote root folder is `DriveSync/`.
+`config root` configures the remote root directory used for all folders.
+You can change this remote root folder with `config root set`.
+With `--remote-dir`, you can bind a local folder to a specific remote subfolder.
+A `remote-dir` can only be used once in the DriveSync configuration.
 
-Exemple :
+Example:
 
 ```bash
 drivesync config root set Backups/DriveSync
 drivesync config root show
 ```
 
-Si le dossier local n'existe pas lors d'un `dir add`, DriveSync propose sa creation en interactif (`y/N`).
-Pour les scripts ou un usage non-interactif, utilisez `--create`.
+If the local folder does not exist when running `dir add`, DriveSync prompts to create it interactively (`y/N`).
+For scripts or non-interactive usage, use `--create`.
 
-Pour definir un emplacement de config personnalise via l'outil :
+To set a custom config location via the tool:
 
 ```bash
 drivesync config path set ~/.drivesync
 drivesync config path show
 ```
 
-Pour revenir au chemin standard :
+To return to the default path:
 
 ```bash
 drivesync config path reset
