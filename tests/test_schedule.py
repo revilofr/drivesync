@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 
 from drivesync.cli import main
@@ -36,8 +37,6 @@ class ScheduleTests(unittest.TestCase):
 
     def test_schedule_set_and_show_json(self) -> None:
         with tempfile.TemporaryFile(mode="w+") as stdout:
-            from contextlib import redirect_stdout
-
             with redirect_stdout(stdout):
                 exit_code = main([
                     "schedule",
@@ -61,8 +60,6 @@ class ScheduleTests(unittest.TestCase):
 
     def test_schedule_set_five_minutes_and_preview(self) -> None:
         with tempfile.TemporaryFile(mode="w+") as stdout:
-            from contextlib import redirect_stdout
-
             with redirect_stdout(stdout):
                 exit_code = main([
                     "schedule",
@@ -80,8 +77,6 @@ class ScheduleTests(unittest.TestCase):
         self.assertEqual(payload["frequency"], "5minutes")
 
         with tempfile.TemporaryFile(mode="w+") as preview_stdout:
-            from contextlib import redirect_stdout
-
             with redirect_stdout(preview_stdout):
                 preview_exit_code = main(["schedule", "preview"])
 
@@ -93,8 +88,6 @@ class ScheduleTests(unittest.TestCase):
 
     def test_schedule_set_requires_at_for_daily(self) -> None:
         with tempfile.TemporaryFile(mode="w+") as stderr:
-            from contextlib import redirect_stderr
-
             with redirect_stderr(stderr):
                 exit_code = main(["schedule", "set", "docs", "--frequency", "daily"])
 
@@ -108,8 +101,6 @@ class ScheduleTests(unittest.TestCase):
         set_schedule("docs", frequency="weekly", at_time="03:15", day="sunday")
 
         with tempfile.TemporaryFile(mode="w+") as stdout:
-            from contextlib import redirect_stdout
-
             with redirect_stdout(stdout):
                 exit_code = main(["schedule", "preview"])
 
@@ -120,6 +111,49 @@ class ScheduleTests(unittest.TestCase):
         self.assertIn("# BEGIN DRIVESYNC SCHEDULES", output)
         self.assertIn("15 3 * * 0", output)
         self.assertIn("sync run docs --trigger scheduled --scheduler cron", output)
+
+    @patch("drivesync.schedule._read_crontab", return_value="")
+    def test_schedule_set_warns_when_not_installed_in_cron(self, _mock_read_crontab: object) -> None:
+        with tempfile.TemporaryFile(mode="w+") as stdout, tempfile.TemporaryFile(mode="w+") as stderr:
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = main([
+                    "schedule",
+                    "set",
+                    "docs",
+                    "--frequency",
+                    "5minutes",
+                ])
+
+            stderr.seek(0)
+            error_output = stderr.read()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Run 'drivesync schedule install'", error_output)
+
+    @patch(
+        "drivesync.schedule._read_crontab",
+        return_value=(
+            "# BEGIN DRIVESYNC SCHEDULES\n"
+            "0 * * * * old command\n"
+            "# END DRIVESYNC SCHEDULES\n"
+        ),
+    )
+    def test_schedule_set_warns_when_installed_cron_block_is_stale(self, _mock_read_crontab: object) -> None:
+        with tempfile.TemporaryFile(mode="w+") as stdout, tempfile.TemporaryFile(mode="w+") as stderr:
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                exit_code = main([
+                    "schedule",
+                    "set",
+                    "docs",
+                    "--frequency",
+                    "5minutes",
+                ])
+
+            stderr.seek(0)
+            error_output = stderr.read()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("older DriveSync schedule block", error_output)
 
     @patch("drivesync.schedule.subprocess.run")
     def test_schedule_install_merges_user_crontab(self, mock_subprocess_run: object) -> None:

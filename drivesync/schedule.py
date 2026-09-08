@@ -26,6 +26,11 @@ SCHEDULE_TIME_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 CRON_BLOCK_START = "# BEGIN DRIVESYNC SCHEDULES"
 CRON_BLOCK_END = "# END DRIVESYNC SCHEDULES"
 
+SCHEDULE_APPLY_STATUS_CURRENT = "current"
+SCHEDULE_APPLY_STATUS_PENDING_INSTALL = "pending_install"
+SCHEDULE_APPLY_STATUS_PENDING_UNINSTALL = "pending_uninstall"
+SCHEDULE_APPLY_STATUS_STALE = "stale"
+
 
 class ScheduleConfigError(ValueError):
     """Raised when a configured schedule is invalid."""
@@ -264,6 +269,20 @@ def _strip_managed_block(content: str) -> str:
     return "\n".join(kept_lines).strip()
 
 
+def _extract_managed_block(content: str) -> str:
+    block_lines: list[str] = []
+    in_block = False
+    for raw_line in content.splitlines():
+        line = raw_line.strip()
+        if line == CRON_BLOCK_START:
+            in_block = True
+        if in_block:
+            block_lines.append(raw_line)
+        if line == CRON_BLOCK_END and in_block:
+            break
+    return "\n".join(block_lines).strip()
+
+
 def _read_crontab() -> str:
     try:
         result = subprocess.run(
@@ -319,3 +338,20 @@ def uninstall_schedules() -> ScheduleApplyResult:
     stripped = _strip_managed_block(existing)
     _write_crontab(stripped)
     return ScheduleApplyResult(schedule_count=0, crontab_content=stripped)
+
+
+def get_schedule_apply_status() -> str:
+    preview = render_schedule_preview().strip()
+    try:
+        existing = _read_crontab()
+    except ScheduleInstallError:
+        return SCHEDULE_APPLY_STATUS_PENDING_INSTALL if preview else SCHEDULE_APPLY_STATUS_CURRENT
+
+    installed = _extract_managed_block(existing).strip()
+    if installed == preview:
+        return SCHEDULE_APPLY_STATUS_CURRENT
+    if not installed and preview:
+        return SCHEDULE_APPLY_STATUS_PENDING_INSTALL
+    if installed and not preview:
+        return SCHEDULE_APPLY_STATUS_PENDING_UNINSTALL
+    return SCHEDULE_APPLY_STATUS_STALE

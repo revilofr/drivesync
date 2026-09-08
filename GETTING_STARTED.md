@@ -47,6 +47,7 @@ Planification :
 - le backend MVP utilise la crontab utilisateur Linux
 - `schedule set/remove` changent la configuration locale
 - `schedule install/uninstall` appliquent ou retirent le bloc DriveSync dans la crontab
+- apres un `schedule set` ou `schedule remove`, il faut executer `schedule install` ou `schedule uninstall` pour mettre a jour la crontab reelle
 - une execution planifiee lance `sync run <id>` et est journalisee dans l'historique interne
 
 Frequences supportees :
@@ -387,9 +388,19 @@ PYTHONPATH=. python3 -m drivesync sync status --json
 PYTHONPATH=. python3 -m drivesync sync logs
 PYTHONPATH=. python3 -m drivesync sync logs --json
 PYTHONPATH=. python3 -m drivesync sync logs documents --path
+PYTHONPATH=. python3 -m drivesync schedule set documents --frequency 5minutes
+PYTHONPATH=. python3 -m drivesync schedule preview
+PYTHONPATH=. python3 -m drivesync schedule install
 PYTHONPATH=. python3 -m drivesync config path show
 PYTHONPATH=. python3 -m drivesync config path show --json
 ```
+
+Important pour la planification :
+
+- `schedule set` et `schedule remove` modifient seulement la configuration DriveSync stockee localement
+- `schedule install` ecrit cette configuration dans la crontab utilisateur
+- `schedule uninstall` retire seulement le bloc DriveSync de la crontab et laisse la configuration locale intacte
+- si la crontab contient encore une ancienne frequence, relancer `PYTHONPATH=. python3 -m drivesync schedule install`
 
 Exemple de binding explicite local vers remote :
 

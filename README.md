@@ -210,9 +210,18 @@ Planification :
 - `schedule` est l'interface metier DriveSync pour la planification
 - le backend MVP s'appuie sur `crontab` sous Linux
 - `schedule set/remove` modifient la configuration locale DriveSync
-- `schedule install` applique la configuration courante dans la crontab utilisateur
-- `schedule uninstall` retire uniquement le bloc gere par DriveSync dans la crontab utilisateur
+- `schedule install` applique la configuration locale courante dans la crontab utilisateur
+- `schedule uninstall` retire uniquement le bloc gere par DriveSync dans la crontab utilisateur, sans effacer la configuration locale
+- apres un `schedule set` ou `schedule remove`, la crontab ne change pas tant que `schedule install` ou `schedule uninstall` n'a pas ete execute
 - chaque execution planifiee lance `sync run` et est journalisee dans l'historique interne
+
+Workflow recommande :
+
+- `schedule set ...` pour enregistrer ou modifier la frequence voulue
+- `schedule preview` pour verifier le bloc cron genere
+- `schedule install` pour appliquer la configuration courante dans `crontab`
+- `schedule remove ...` pour retirer une entree locale devenue inutile
+- `schedule uninstall` si tu veux retirer completement le bloc DriveSync de `crontab`
 
 Frequences supportees dans le MVP :
 

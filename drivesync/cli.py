@@ -27,11 +27,15 @@ from .schedule import (
     ScheduleInstallError,
     ScheduledSync,
     describe_schedule,
+    get_schedule_apply_status,
     get_schedule,
     install_schedules,
     load_schedules,
     remove_schedule,
     render_schedule_preview,
+    SCHEDULE_APPLY_STATUS_PENDING_INSTALL,
+    SCHEDULE_APPLY_STATUS_PENDING_UNINSTALL,
+    SCHEDULE_APPLY_STATUS_STALE,
     set_schedule,
     uninstall_schedules,
 )
@@ -181,17 +185,50 @@ def build_parser() -> argparse.ArgumentParser:
     auth_setup_parser.add_argument("remote", nargs="?", default=None)
     auth_setup_parser.add_argument("--json", action="store_true", dest="as_json")
 
-    schedule_parser = subparsers.add_parser("schedule", help="Manage scheduled synchronizations")
+    schedule_parser = subparsers.add_parser(
+        "schedule",
+        help="Manage local schedules and apply them to user crontab",
+        description=(
+            "Manage DriveSync scheduled synchronizations. "
+            "Use 'set' and 'remove' to change the local schedule configuration, "
+            "then run 'install' or 'uninstall' to apply those changes to the user crontab."
+        ),
+    )
     schedule_subparsers = schedule_parser.add_subparsers(dest="schedule_command")
 
-    schedule_set_parser = schedule_subparsers.add_parser("set", help="Create or update one schedule")
-    schedule_set_parser.add_argument("directory_id")
-    schedule_set_parser.add_argument(
-        "--frequency", required=True, choices=["5minutes", "hourly", "daily", "weekly"]
+    schedule_set_parser = schedule_subparsers.add_parser(
+        "set",
+        help="Create or update one local schedule configuration",
+        description=(
+            "Create or update the local DriveSync schedule configuration for one directory id. "
+            "This command does not update cron by itself; run 'drivesync schedule install' afterward "
+            "to apply the current configuration to the user crontab."
+        ),
     )
-    schedule_set_parser.add_argument("--at", dest="at_time", default=None)
-    schedule_set_parser.add_argument("--day", default=None)
-    schedule_set_parser.add_argument("--json", action="store_true", dest="as_json")
+    schedule_set_parser.add_argument("directory_id", help="Managed directory id to schedule")
+    schedule_set_parser.add_argument(
+        "--frequency",
+        required=True,
+        choices=["5minutes", "hourly", "daily", "weekly"],
+        help="Execution frequency for this directory id",
+    )
+    schedule_set_parser.add_argument(
+        "--at",
+        dest="at_time",
+        default=None,
+        help="Execution time in HH:MM for daily or weekly schedules",
+    )
+    schedule_set_parser.add_argument(
+        "--day",
+        default=None,
+        help="Execution day for weekly schedules: monday..sunday",
+    )
+    schedule_set_parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="Output the saved local schedule configuration as JSON",
+    )
 
     schedule_show_parser = schedule_subparsers.add_parser("show", help="Show one configured schedule")
     schedule_show_parser.add_argument("directory_id")
@@ -200,9 +237,22 @@ def build_parser() -> argparse.ArgumentParser:
     schedule_list_parser = schedule_subparsers.add_parser("list", help="List configured schedules")
     schedule_list_parser.add_argument("--json", action="store_true", dest="as_json")
 
-    schedule_remove_parser = schedule_subparsers.add_parser("remove", help="Remove one configured schedule")
-    schedule_remove_parser.add_argument("directory_id")
-    schedule_remove_parser.add_argument("--json", action="store_true", dest="as_json")
+    schedule_remove_parser = schedule_subparsers.add_parser(
+        "remove",
+        help="Remove one local schedule configuration",
+        description=(
+            "Remove one schedule from the local DriveSync configuration. "
+            "This command does not update cron by itself; run 'drivesync schedule install' "
+            "or 'drivesync schedule uninstall' afterward to apply the change to the user crontab."
+        ),
+    )
+    schedule_remove_parser.add_argument("directory_id", help="Managed directory id to unschedule")
+    schedule_remove_parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="Output the removed local schedule configuration as JSON",
+    )
 
     schedule_preview_parser = schedule_subparsers.add_parser(
         "preview",
@@ -220,14 +270,34 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     schedule_install_parser = schedule_subparsers.add_parser(
-        "install", help="Apply configured schedules to user crontab"
+        "install",
+        help="Apply current local schedule configuration to user crontab",
+        description=(
+            "Write the current local DriveSync schedule configuration into the user crontab. "
+            "The managed DriveSync cron block is replaced with the current preview."
+        ),
     )
-    schedule_install_parser.add_argument("--json", action="store_true", dest="as_json")
+    schedule_install_parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="Output the resulting crontab content as JSON",
+    )
 
     schedule_uninstall_parser = schedule_subparsers.add_parser(
-        "uninstall", help="Remove DriveSync schedules from user crontab"
+        "uninstall",
+        help="Remove the managed DriveSync block from user crontab",
+        description=(
+            "Remove only the managed DriveSync cron block from the user crontab. "
+            "The local DriveSync schedule configuration is kept unchanged."
+        ),
     )
-    schedule_uninstall_parser.add_argument("--json", action="store_true", dest="as_json")
+    schedule_uninstall_parser.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="Output the resulting crontab content as JSON",
+    )
 
     return parser
 
@@ -525,22 +595,50 @@ def _print_schedule_set(
     as_json: bool,
 ) -> int:
     schedule = set_schedule(directory_id, frequency=frequency, at_time=at_time, day=day)
+    apply_status = get_schedule_apply_status()
     if as_json:
         print(json.dumps(_schedule_payload(schedule), indent=2))
+        _print_schedule_apply_hint(apply_status)
         return 0
 
     print(describe_schedule(schedule))
+    _print_schedule_apply_hint(apply_status)
     return 0
 
 
 def _print_schedule_remove(directory_id: str, as_json: bool) -> int:
     schedule = remove_schedule(directory_id)
+    apply_status = get_schedule_apply_status()
     if as_json:
         print(json.dumps(_schedule_payload(schedule), indent=2))
+        _print_schedule_apply_hint(apply_status)
         return 0
 
     print(f"Removed schedule for {schedule.directory_id}")
+    _print_schedule_apply_hint(apply_status)
     return 0
+
+
+def _print_schedule_apply_hint(apply_status: str) -> None:
+    if apply_status == SCHEDULE_APPLY_STATUS_PENDING_INSTALL:
+        print(
+            "Schedule updated locally but not installed in cron. Run 'drivesync schedule install'.",
+            file=sys.stderr,
+        )
+        return
+
+    if apply_status == SCHEDULE_APPLY_STATUS_PENDING_UNINSTALL:
+        print(
+            "No schedules remain locally, but cron still has a DriveSync block. Run 'drivesync schedule uninstall'.",
+            file=sys.stderr,
+        )
+        return
+
+    if apply_status == SCHEDULE_APPLY_STATUS_STALE:
+        print(
+            "Cron still contains an older DriveSync schedule block. Run 'drivesync schedule install' to apply the current configuration.",
+            file=sys.stderr,
+        )
 
 
 def _print_schedule_preview(as_json: bool) -> int:
