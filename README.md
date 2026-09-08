@@ -2,6 +2,53 @@
 
 DriveSync est une petite CLI Linux qui orchestre `rclone` pour des synchronisations simples de repertoires locaux.
 
+## Pourquoi DriveSync ?
+
+Google Drive ne fournit pas de client de synchronisation desktop officiel pour Linux.
+
+`rclone` permet de combler ce manque, notamment avec `bisync`, mais son utilisation quotidienne reste assez technique : configuration des remotes, gestion des chemins, automatisation, logs, resynchronisation et précautions liées aux opérations sensibles.
+
+DriveSync fournit une couche simple au-dessus de `rclone` pour gérer ces synchronisations plus facilement.
+
+### Ce que DriveSync apporte
+
+- configuration persistante des dossiers local ↔ distant ;
+- lancement simplifié des synchronisations ;
+- automatisation et planification ;
+- consultation des statuts, historiques et logs ;
+- encadrement des opérations sensibles comme `bisync --resync` ;
+- gestion centralisée de plusieurs synchronisations.
+
+L'objectif est simple :
+
+> **Configurer `rclone` une fois, puis utiliser DriveSync au quotidien.**
+
+DriveSync ne réimplémente pas le moteur de synchronisation : il s'appuie volontairement sur `rclone`, un projet open source mature distribué sous licence MIT.
+
+```
+DriveSync
+    │
+    ▼
+rclone bisync
+    │
+    ▼
+Google Drive
+```
+
+La configuration initiale de Google Drive reste nécessaire, notamment la création des identifiants OAuth et du remote `rclone`.
+
+Une documentation dédiée est disponible dans [`DRIVESYNC_GOOGLE_AUTH.md`](DRIVESYNC_GOOGLE_AUTH.md).
+
+### Dépendance à rclone
+
+DriveSync utilise [`rclone`](https://rclone.org/) comme moteur de synchronisation.
+
+`rclone` est un projet indépendant distribué sous licence MIT.
+
+DriveSync n'est ni affilié ni officiellement approuvé par le projet rclone ou par Google.
+
+## Etat actuel du projet
+
 Etat actuel du projet :
 
 - stockage de configuration
