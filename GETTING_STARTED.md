@@ -395,6 +395,9 @@ PYTHONPATH=. python3 -m drivesync schedule preview
 PYTHONPATH=. python3 -m drivesync schedule install
 PYTHONPATH=. python3 -m drivesync config path show
 PYTHONPATH=. python3 -m drivesync config path show --json
+PYTHONPATH=. python3 -m drivesync config logs max-size show
+PYTHONPATH=. python3 -m drivesync config logs max-size show --json
+PYTHONPATH=. python3 -m drivesync config logs max-size set 10
 ```
 
 Important for scheduling:

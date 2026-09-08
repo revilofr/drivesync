@@ -50,6 +50,7 @@ DriveSync is a thin orchestration layer above `rclone`, providing a simple CLI f
 ### `config.py`
 - Configuration file management
 - Remote name and root path storage
+- Log capture precision and history max-size storage
 - Configuration validation
 
 ### `directories.py`
@@ -75,12 +76,13 @@ DriveSync is a thin orchestration layer above `rclone`, providing a simple CLI f
 - Status tracking
 
 ### `auth.py`
-- `auth setup/status/reconnect` commands
+- `auth setup/status` commands
 - rclone remote validation
 - Authentication checking
 
 ### `sync_history.py`
 - Execution logging (sync-history.jsonl format)
+- History rotation and archive pruning
 - State persistence
 - Status reporting
 
@@ -88,15 +90,11 @@ DriveSync is a thin orchestration layer above `rclone`, providing a simple CLI f
 
 ```
 ~/.config/drivesync/
-├── config.ini              # General config (remote, root)
+├── config.ini              # General config (remote, root, logs)
 ├── directories.conf        # Directory mappings (id=path)
-└── schedules.json         # Scheduling configuration
-
-~/.local/state/drivesync/
-├── sync-history.jsonl     # Execution log (one JSON per line)
-└── logs/
-    ├── documents-2026-09-07_09-31-14.log
-    └── projects-2026-09-07_09-35-20.log
+├── schedules.json          # Scheduling configuration
+├── sync-history.jsonl      # Current execution log (JSONL)
+└── sync-history-*.jsonl    # Rotated history archives (latest kept)
 ```
 
 ## CLI Design
@@ -166,10 +164,10 @@ Future: Could migrate to `systemd --user` timers (architecture supports this).
 
 ## Logging Philosophy
 
-- Preserve all rclone logs (source of truth)
-- Store path to last log in state
-- Add minimal DriveSync header/footer for context
-- One log file per execution per directory
+- Persist one JSONL execution history for status/log inspection
+- Rotate history when configured max size is exceeded (default: 10 KB)
+- Archive previous history as timestamped JSONL file
+- Prune older archives automatically (keep latest archive)
 
 ## Typical Workflow
 
@@ -191,10 +189,10 @@ drivesync sync run documents --resync
 drivesync sync run documents
 
 # Check status
-drivesync status documents
+drivesync sync status documents
 
 # View logs
-drivesync logs documents
+drivesync sync logs documents
 ```
 
 ## Design Priorities (in order)
