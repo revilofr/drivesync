@@ -1,19 +1,19 @@
-# DriveSync — Configuration Google Drive avec rclone
+# DriveSync — Configuring Google Drive with rclone
 
-Ce document décrit la procédure pas à pas utilisée pour configurer un accès Google Drive personnel avec `rclone`, afin de l'utiliser ensuite avec DriveSync.
+This document describes the step-by-step procedure to configure personal Google Drive access with `rclone`, for use with DriveSync.
 
-> Objectif : permettre à `rclone` d'accéder à un compte Google Drive personnel via OAuth 2.0, avec un Client ID Google dédié.
+> Goal: allow `rclone` to access a personal Google Drive account via OAuth 2.0, with a dedicated Google Client ID.
 
 ---
 
-## 1. Prérequis
+## 1. Prerequisites
 
-- Un compte Google personnel
-- Un projet Google Cloud
-- `rclone` installé sur la machine Linux
-- Un navigateur web disponible sur la machine
+- A personal Google account
+- A Google Cloud project
+- `rclone` installed on the Linux machine
+- A web browser available on the machine
 
-Vérifier que `rclone` est installé :
+Verify that `rclone` is installed:
 
 ```bash
 rclone version
@@ -21,72 +21,72 @@ rclone version
 
 ---
 
-## 2. Créer un projet Google Cloud
+## 2. Create a Google Cloud project
 
-Se connecter à Google Cloud Console avec le compte Google qui sera utilisé pour DriveSync.
+Log in to Google Cloud Console with the Google account that will be used for DriveSync.
 
-Créer un nouveau projet, par exemple :
+Create a new project, for example:
 
 ```text
 DriveSync
 ```
 
-Conserver ce projet pour toute la configuration OAuth et Google Drive API.
+Keep this project for all OAuth configuration and Google Drive API setup.
 
 ---
 
-## 3. Configurer Google Auth Platform
+## 3. Configure Google Auth Platform
 
-Dans le projet Google Cloud :
+In the Google Cloud project:
 
 ```text
 Google Auth Platform
 ```
 
-Configurer l'application OAuth.
+Configure the OAuth application.
 
-### Type d'audience
+### Audience type
 
-Choisir :
+Choose:
 
 ```text
-Externe
+External
 ```
 
-`Interne` est réservé aux organisations Google Workspace / Cloud Identity.
+`Internal` is reserved for Google Workspace / Cloud Identity organizations.
 
-Le mode `Externe` ne signifie pas que tout le monde peut accéder au Drive.  
-Chaque utilisateur doit explicitement autoriser l'application.
+External mode does not mean everyone can access the Drive.  
+Each user must explicitly authorize the application.
 
-En mode test, seuls les comptes ajoutés dans la liste des utilisateurs test peuvent utiliser l'application.
+In test mode, only accounts added to the test user list can use the application.
 
 ---
 
-## 4. Ajouter l'utilisateur test
+## 4. Add the test user
 
-Dans :
+In:
 
 ```text
 Google Auth Platform
 → Audience
-→ Utilisateurs test
+→ Test users
 ```
 
-Ajouter le compte Google personnel qui sera utilisé avec rclone.
+Add the personal Google account that will be used with rclone.
 
-Exemple :
+Example:
 
 ```text
-mon.compte@gmail.com
+my.account@gmail.com
 ```
 
-Pendant la phase de test, seuls les utilisateurs présents dans cette liste peuvent autoriser l'application.
+During the test phase, only users in this list can authorize the application.
 
 ---
 
-## 5. Créer un OAuth Client ID
+## 5. Create an OAuth Client ID
 
-Dans :
+In:
 
 ```text
 Google Auth Platform
@@ -94,30 +94,30 @@ Google Auth Platform
 → Create client
 ```
 
-Créer un client OAuth avec le type :
+Create an OAuth client with type:
 
 ```text
 Desktop app
 ```
 
-Nom conseillé :
+Suggested name:
 
 ```text
 DriveSync
 ```
 
-Google fournit ensuite :
+Google then provides:
 
 - `Client ID`
 - `Client Secret`
 
-Le Client ID ressemble généralement à :
+The Client ID typically looks like:
 
 ```text
 123456789-xxxxxxxxxxxxxxxx.apps.googleusercontent.com
 ```
 
-Le Client Secret ressemble généralement à :
+The Client Secret typically looks like:
 
 ```text
 GOCSPX-xxxxxxxxxxxxxxxx
@@ -125,9 +125,9 @@ GOCSPX-xxxxxxxxxxxxxxxx
 
 ### Important
 
-Toujours utiliser le `Client ID` et le `Client Secret` provenant du **même client OAuth**.
+Always use the `Client ID` and `Client Secret` from the **same OAuth client**.
 
-Si nécessaire, télécharger le fichier JSON du client OAuth et récupérer directement :
+If needed, download the JSON file of the OAuth client and retrieve directly:
 
 ```json
 {
@@ -140,108 +140,108 @@ Si nécessaire, télécharger le fichier JSON du client OAuth et récupérer dir
 
 ---
 
-## 6. Activer Google Drive API
+## 6. Enable Google Drive API
 
-Dans le projet Google Cloud, ouvrir :
+In the Google Cloud project, open:
 
 ```text
 APIs & Services
 → Library
 ```
 
-Chercher :
+Search for:
 
 ```text
 Google Drive API
 ```
 
-Puis cliquer sur :
+Then click:
 
 ```text
 Enable
 ```
 
-L'API correspond au service :
+The API corresponds to the service:
 
 ```text
 drive.googleapis.com
 ```
 
-Après activation, attendre éventuellement quelques minutes avant de retester.
+After enabling, wait a few minutes before retesting.
 
-### Erreur typique si l'API n'est pas activée
+### Typical error if the API is not enabled
 
 ```text
 Google Drive API has not been used in project ... before or it is disabled
 ```
 
-ou :
+or:
 
 ```text
 accessNotConfigured
 ```
 
-Dans ce cas, activer simplement Google Drive API dans le projet concerné.
+In this case, simply enable Google Drive API in the relevant project.
 
 ---
 
-## 7. Lancer la configuration rclone
+## 7. Start rclone configuration
 
-Lancer :
+Run:
 
 ```bash
 rclone config
 ```
 
-Créer un nouveau remote.
+Create a new remote.
 
-Donner un nom explicite, par exemple :
+Give it an explicit name, for example:
 
 ```text
 gdrive-personal
 ```
 
-Choisir Google Drive comme backend.
+Choose Google Drive as the backend.
 
 ---
 
-## 8. Renseigner le Client ID et le Client Secret
+## 8. Enter the Client ID and Client Secret
 
-Lorsque rclone demande :
+When rclone asks:
 
 ```text
 client_id>
 ```
 
-coller le Client ID OAuth créé précédemment.
+paste the OAuth Client ID created earlier.
 
-Puis lorsque rclone demande :
+Then when rclone asks:
 
 ```text
 client_secret>
 ```
 
-coller le Client Secret correspondant.
+paste the corresponding Client Secret.
 
-### Erreur typique
+### Typical error
 
 ```text
 oauth2: "invalid_client" "The provided client secret is invalid."
 ```
 
-Cela signifie généralement :
+This usually means:
 
-- mauvais Client Secret ;
-- Client Secret provenant d'un autre client OAuth ;
-- erreur de copier-coller.
+- wrong Client Secret;
+- Client Secret from a different OAuth client;
+- copy-paste error.
 
-Dans ce cas, revenir dans Google Cloud et recopier les deux valeurs depuis le même client OAuth.
+In this case, go back to Google Cloud and recopy both values from the same OAuth client.
 
 ---
 
-## 9. Choisir le scope Google Drive
+## 9. Choose the Google Drive scope
 
-rclone propose plusieurs scopes :
+rclone offers several scopes:
 
 ```text
 1 / Full access all files, excluding Application Data Folder.
@@ -260,109 +260,109 @@ rclone propose plusieurs scopes :
     (drive.metadata.readonly)
 ```
 
-Pour DriveSync et `rclone bisync`, choisir :
+For DriveSync and `rclone bisync`, choose:
 
 ```text
 1
 ```
 
-soit :
+or:
 
 ```text
 drive
 ```
 
-Pourquoi :
+Why:
 
-`bisync` doit pouvoir :
+`bisync` must be able to:
 
-- lire ;
-- créer ;
-- modifier ;
-- renommer ;
-- supprimer ;
+- read;
+- create;
+- modify;
+- rename;
+- delete;
 
-les fichiers présents des deux côtés.
+files present on both sides.
 
-Le scope `drive.file` est trop restrictif pour ce cas, car il limite l'accès aux fichiers créés ou explicitement autorisés via l'application.
+The `drive.file` scope is too restrictive for this use case, as it limits access to files created or explicitly authorized by the application.
 
 ---
 
 ## 10. Service Account
 
-Lorsque rclone demande :
+When rclone asks:
 
 ```text
 service_account_file>
 ```
 
-laisser vide :
+leave it empty:
 
 ```text
-[Entrée]
+[Enter]
 ```
 
-Un Service Account n'est pas nécessaire pour un compte Google personnel avec authentification interactive OAuth.
+A Service Account is not necessary for a personal Google account with interactive OAuth authentication.
 
 ---
 
-## 11. Configuration avancée
+## 11. Advanced configuration
 
-Lorsque rclone demande :
+When rclone asks:
 
 ```text
 Edit advanced config?
 ```
 
-répondre :
+answer:
 
 ```text
 n
 ```
 
-Pour un usage standard DriveSync, les options avancées ne sont pas nécessaires.
+For standard DriveSync usage, advanced options are not necessary.
 
 ---
 
-## 12. Authentification via navigateur
+## 12. Browser authentication
 
-Lorsque rclone demande :
+When rclone asks:
 
 ```text
 Use web browser to automatically authenticate rclone with remote?
 ```
 
-répondre :
+answer:
 
 ```text
 y
 ```
 
-rclone démarre alors un serveur HTTP local et ouvre le navigateur.
+rclone then starts a local HTTP server and opens the browser.
 
-Exemple :
+Example:
 
 ```text
 http://127.0.0.1:53682/
 ```
 
-Le flux est alors :
+The flow is then:
 
 ```text
 rclone
   ↓
-navigateur
+browser
   ↓
-connexion Google
+Google login
   ↓
-autorisation OAuth
+OAuth authorization
   ↓
-retour vers http://127.0.0.1:53682/
+return to http://127.0.0.1:53682/
   ↓
-rclone récupère le code OAuth
+rclone retrieves OAuth code
 ```
 
-Messages normaux :
+Normal messages:
 
 ```text
 NOTICE: Waiting for code...
@@ -373,66 +373,66 @@ NOTICE: Got code
 
 ## 13. Redirect URL
 
-Avec un client OAuth personnalisé, rclone peut afficher :
+With a custom OAuth client, rclone may display:
 
 ```text
 Make sure your Redirect URL is set to "http://127.0.0.1:53682/" in your custom config.
 ```
 
-Pour un client de type `Desktop app`, cette URL locale est utilisée par rclone pour récupérer le résultat de l'authentification.
+For a `Desktop app` type client, this local URL is used by rclone to retrieve the authentication result.
 
 ---
 
-## 14. Erreur 403 — utilisateur non autorisé
+## 14. Error 403 — unauthorized user
 
-Erreur possible :
+Possible error:
 
 ```text
-Accès bloqué : rclone n'a pas terminé la procédure de validation de Google
-Erreur 403 : access_denied
+Access denied: rclone did not complete Google validation procedure
+Error 403: access_denied
 ```
 
-Si l'application est en mode test, vérifier :
+If the application is in test mode, check:
 
 ```text
 Google Auth Platform
 → Audience
-→ Utilisateurs test
+→ Test users
 ```
 
-et ajouter le compte Google utilisé pour l'authentification.
+and add the Google account used for authentication.
 
-Exemple :
+Example:
 
 ```text
-mon.compte@gmail.com
+my.account@gmail.com
 ```
 
-Puis recommencer l'authentification rclone.
+Then retry rclone authentication.
 
 ---
 
 ## 15. Shared Drive
 
-rclone demande ensuite :
+rclone then asks:
 
 ```text
 Configure this as a Shared Drive (Team Drive)?
 ```
 
-Pour un Google Drive personnel, répondre :
+For a personal Google Drive, answer:
 
 ```text
 n
 ```
 
-Les Shared Drives concernent principalement Google Workspace.
+Shared Drives mainly concern Google Workspace.
 
 ---
 
-## 16. Valider le remote
+## 16. Validate the remote
 
-rclone affiche ensuite quelque chose comme :
+rclone then displays something like:
 
 ```text
 Keep this "gdrive-personal" remote?
@@ -442,27 +442,27 @@ e) Edit this remote
 d) Delete this remote
 ```
 
-Répondre :
+Answer:
 
 ```text
 y
 ```
 
-Le remote est alors enregistré dans la configuration rclone.
+The remote is then registered in the rclone configuration.
 
 ---
 
-## 17. Vérifier que l'accès fonctionne
+## 17. Verify access works
 
-Tester le remote avec :
+Test the remote with:
 
 ```bash
 rclone lsd "gdrive-personal:"
 ```
 
-Si la configuration est correcte, rclone doit afficher les dossiers présents à la racine du Google Drive.
+If the configuration is correct, rclone should display the folders at the root of the Google Drive.
 
-Exemple :
+Example:
 
 ```text
           -1 2026-09-07 15:00:00        -1 Documents
@@ -470,23 +470,23 @@ Exemple :
           -1 2026-09-07 15:00:00        -1 DriveSync
 ```
 
-À ce stade :
+At this point:
 
 ```text
 OAuth                ✅
 Client ID            ✅
 Client Secret        ✅
-Utilisateur test     ✅
+Test user            ✅
 Google Drive API     ✅
-Remote rclone        ✅
-Accès Google Drive   ✅
+rclone remote        ✅
+Google Drive access  ✅
 ```
 
 ---
 
-# Vérifications utiles
+# Useful checks
 
-## Afficher les remotes configurés
+## Display configured remotes
 
 ```bash
 rclone listremotes
@@ -494,7 +494,7 @@ rclone listremotes
 
 ---
 
-## Afficher la configuration en masquant les secrets
+## Display configuration masking secrets
 
 ```bash
 rclone config redacted "gdrive-personal"
@@ -502,7 +502,7 @@ rclone config redacted "gdrive-personal"
 
 ---
 
-## Afficher le chemin du fichier de configuration rclone
+## Display the path to the rclone configuration file
 
 ```bash
 rclone config file
@@ -510,20 +510,20 @@ rclone config file
 
 ---
 
-# Sécurité
+# Security
 
-DriveSync ne doit jamais gérer directement :
+DriveSync must never manage directly:
 
-- le mot de passe Google ;
-- l'Access Token OAuth ;
-- le Refresh Token OAuth ;
-- le Client Secret dans sa propre configuration.
+- the Google password;
+- the OAuth Access Token;
+- the OAuth Refresh Token;
+- the Client Secret in its own configuration.
 
-Ces informations restent sous la responsabilité de `rclone`.
+This information remains the responsibility of `rclone`.
 
-DriveSync doit uniquement connaître le nom du remote utilisé.
+DriveSync should only know the name of the remote used.
 
-Exemple :
+Example:
 
 ```ini
 [drive]
@@ -533,12 +533,12 @@ root = DriveSync
 
 ---
 
-# Architecture retenue
+# Chosen architecture
 
 ```text
 DriveSync
     │
-    ├── configuration des dossiers
+    ├── directory configuration
     ├── status
     ├── check
     ├── orchestration
@@ -546,40 +546,40 @@ DriveSync
     ▼
 rclone
     │
-    ├── OAuth Google
+    ├── Google OAuth
     ├── tokens
     ├── Google Drive API
     ├── bisync
-    ├── conflits
+    ├── conflicts
     ├── recovery
     └── logs
 ```
 
-Principe :
+Principle:
 
-> DriveSync ne réimplémente jamais une fonctionnalité déjà correctement fournie par rclone.
+> DriveSync never reimplements a feature already correctly provided by rclone.
 
 ---
 
-# Prochaine étape
+# Next step
 
-Une fois l'authentification validée, ne pas commencer directement avec `~/Documents`.
+Once authentication is validated, do not start directly with `~/Documents`.
 
-Créer d'abord un petit répertoire de test, par exemple :
+First create a small test directory, for example:
 
 ```bash
 mkdir -p ~/DriveSync-Test
 ```
 
-Puis utiliser ce dossier pour valider :
+Then use this folder to validate:
 
-- création locale → Google Drive ;
-- création Google Drive → local ;
-- modification locale ;
-- modification distante ;
-- suppression ;
-- conflit ;
-- fonctionnement offline ;
-- reprise après reconnexion.
+- local creation → Google Drive;
+- Google Drive creation → local;
+- local modification;
+- remote modification;
+- deletion;
+- conflict;
+- offline operation;
+- recovery after reconnection.
 
-Une fois ces tests validés, la synchronisation de `~/Documents` pourra être configurée.
+Once these tests are validated, synchronization of `~/Documents` can be configured.
