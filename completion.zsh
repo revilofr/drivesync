@@ -18,7 +18,7 @@ _drivesync_remotes() {
 }
 
 _drivesync() {
-    local -a top_commands dir_actions sync_actions config_actions config_path_actions config_root_actions config_logs_actions config_logs_precision_actions auth_actions schedule_actions ids remotes
+    local -a top_commands dir_actions sync_actions config_actions config_path_actions config_root_actions config_logs_actions config_logs_precision_actions config_logs_max_size_actions auth_actions schedule_actions ids remotes
 
     top_commands=(
         'dir:Manage synchronized directories'
@@ -62,11 +62,17 @@ _drivesync() {
 
     config_logs_actions=(
         'precision:Logging precision commands'
+        'max-size:Sync history max size commands'
     )
 
     config_logs_precision_actions=(
         'show:Show configured logs precision'
         'set:Set logs precision'
+    )
+
+    config_logs_max_size_actions=(
+        'show:Show configured sync history max size in KB'
+        'set:Set sync history max size in KB'
     )
 
     auth_actions=(
@@ -238,6 +244,26 @@ _drivesync() {
                         set)
                             if (( CURRENT == 6 )); then
                                 compadd -- light full
+                                return
+                            fi
+                            _arguments '--json[Output as JSON]'
+                            return
+                            ;;
+                    esac
+                elif [[ "${words[4]}" == "max-size" ]]; then
+                    if (( CURRENT == 5 )); then
+                        _describe -t config-logs-max-size-actions 'config logs max-size action' config_logs_max_size_actions
+                        return
+                    fi
+
+                    case "${words[5]}" in
+                        show)
+                            _arguments '--json[Output as JSON]'
+                            return
+                            ;;
+                        set)
+                            if (( CURRENT == 6 )); then
+                                _message 'size in KB'
                                 return
                             fi
                             _arguments '--json[Output as JSON]'

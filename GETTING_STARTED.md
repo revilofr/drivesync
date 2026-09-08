@@ -40,6 +40,8 @@ The project is under construction.
 - `sync logs` displays the DriveSync journal
 - `sync logs --raw` displays the raw captured output of `rclone`
 - `config logs precision show|set` controls the verbosity level captured for next runs
+- `config logs max-size show|set` controls max size of `sync-history.jsonl` in KB (default: 10)
+- when max size is exceeded, DriveSync archives current history to `sync-history-<timestamp>.jsonl`, starts a new `sync-history.jsonl`, and keeps only the latest archive
 
 ## Scheduling:
 

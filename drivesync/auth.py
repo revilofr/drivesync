@@ -165,6 +165,7 @@ def setup_auth(remote: str | None = None) -> AuthSetupResult:
             remote=selected_remote,
             root=config.root,
             logs_precision=config.logs_precision,
+            logs_max_size_kb=config.logs_max_size_kb,
         )
     )
     return AuthSetupResult(

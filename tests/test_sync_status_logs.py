@@ -8,7 +8,7 @@ import unittest
 
 from drivesync.cli import main
 from drivesync.directories import add_directory
-from drivesync.sync_history import append_sync_history_entry
+from drivesync.sync_history import append_sync_history_entry, get_sync_history_path
 
 
 class SyncStatusLogsTests(unittest.TestCase):
@@ -157,6 +157,76 @@ class SyncStatusLogsTests(unittest.TestCase):
         self.assertIn("[", output)
         self.assertIn("docs", output)
         self.assertIn("raw bisync lines", output)
+
+    def test_sync_history_rotates_and_prunes_older_archives(self) -> None:
+        add_directory("docs", self.docs_dir)
+        set_exit_code = main(["config", "logs", "max-size", "set", "1"])
+        self.assertEqual(set_exit_code, 0)
+
+        append_sync_history_entry(
+            directory_id="docs",
+            code=0,
+            status="success",
+            local_directory=str(self.docs_dir),
+            remote_directory="gdrive:DriveSync/docs",
+            message="run1",
+            resync=False,
+            force=False,
+            raw_output="x" * 700,
+            trigger="manual",
+            scheduler=None,
+        )
+
+        history_path = get_sync_history_path()
+        first_archives = sorted(history_path.parent.glob("sync-history-*.jsonl"))
+        self.assertEqual(len(first_archives), 0)
+
+        append_sync_history_entry(
+            directory_id="docs",
+            code=0,
+            status="success",
+            local_directory=str(self.docs_dir),
+            remote_directory="gdrive:DriveSync/docs",
+            message="run2",
+            resync=False,
+            force=False,
+            raw_output="x" * 700,
+            trigger="manual",
+            scheduler=None,
+        )
+
+        second_archives = sorted(history_path.parent.glob("sync-history-*.jsonl"))
+        self.assertEqual(len(second_archives), 1)
+        with history_path.open("r", encoding="utf-8") as handle:
+            current_after_second = [json.loads(line) for line in handle if line.strip()]
+        self.assertEqual(len(current_after_second), 1)
+        self.assertEqual(current_after_second[0]["message"], "run2")
+
+        append_sync_history_entry(
+            directory_id="docs",
+            code=0,
+            status="success",
+            local_directory=str(self.docs_dir),
+            remote_directory="gdrive:DriveSync/docs",
+            message="run3",
+            resync=False,
+            force=False,
+            raw_output="x" * 700,
+            trigger="manual",
+            scheduler=None,
+        )
+
+        third_archives = sorted(history_path.parent.glob("sync-history-*.jsonl"))
+        self.assertEqual(len(third_archives), 1)
+        with third_archives[0].open("r", encoding="utf-8") as handle:
+            latest_archive = [json.loads(line) for line in handle if line.strip()]
+        with history_path.open("r", encoding="utf-8") as handle:
+            current_after_third = [json.loads(line) for line in handle if line.strip()]
+
+        self.assertEqual(len(latest_archive), 1)
+        self.assertEqual(latest_archive[0]["message"], "run2")
+        self.assertEqual(len(current_after_third), 1)
+        self.assertEqual(current_after_third[0]["message"], "run3")
 
 
 if __name__ == "__main__":

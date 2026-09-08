@@ -232,6 +232,10 @@ drivesync config logs precision show
 drivesync config logs precision show --json
 drivesync config logs precision set light
 drivesync config logs precision set full
+drivesync config logs max-size show
+drivesync config logs max-size show --json
+drivesync config logs max-size set 10
+drivesync config logs max-size set 64
 drivesync config root show
 drivesync config root show --json
 drivesync config root set Backups/DriveSync
@@ -282,12 +286,21 @@ Log precision:
 - `light`: light raw capture, sufficient for normal use
 - `full`: more verbose `rclone` capture for in-depth diagnosis
 
+Log history size and rotation:
+
+- by default, `sync-history.jsonl` is rotated when its next write would exceed `10 KB`
+- DriveSync archives the previous file to `sync-history-<timestamp>.jsonl`
+- older archives are deleted automatically, only the latest archive is kept
+- the threshold is configurable with `config logs max-size set <kb>`
+
 Configuration:
 
 ```bash
 drivesync config logs precision show
 drivesync config logs precision set light
 drivesync config logs precision set full
+drivesync config logs max-size show
+drivesync config logs max-size set 10
 ```
 
 `--resync` security:

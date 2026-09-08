@@ -14,6 +14,7 @@ from .config import (
     get_config_file,
     get_directories_file,
     load_app_config,
+    normalize_logs_max_size_kb,
     normalize_logs_precision,
     normalize_remote_root,
     set_config_dir_override,
@@ -141,6 +142,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     config_logs_precision_set_parser.add_argument("precision", choices=["light", "full"])
     config_logs_precision_set_parser.add_argument("--json", action="store_true", dest="as_json")
+
+    config_logs_max_size_parser = config_logs_subparsers.add_parser(
+        "max-size", help="Set/show sync history max size in KB"
+    )
+    config_logs_max_size_subparsers = config_logs_max_size_parser.add_subparsers(
+        dest="config_logs_max_size_command"
+    )
+
+    config_logs_max_size_show_parser = config_logs_max_size_subparsers.add_parser(
+        "show", help="Show configured sync history max size in KB"
+    )
+    config_logs_max_size_show_parser.add_argument("--json", action="store_true", dest="as_json")
+
+    config_logs_max_size_set_parser = config_logs_max_size_subparsers.add_parser(
+        "set", help="Set sync history max size in KB"
+    )
+    config_logs_max_size_set_parser.add_argument("size_kb", type=int)
+    config_logs_max_size_set_parser.add_argument("--json", action="store_true", dest="as_json")
 
     config_path_show_parser = config_path_subparsers.add_parser("show", help="Show resolved config paths")
     config_path_show_parser.add_argument("--json", action="store_true", dest="as_json")
@@ -551,6 +570,7 @@ def _print_logs_precision(as_json: bool, precision: str | None = None) -> int:
                 remote=config.remote,
                 root=config.root,
                 logs_precision=resolved_precision,
+                logs_max_size_kb=config.logs_max_size_kb,
             )
         )
 
@@ -559,6 +579,29 @@ def _print_logs_precision(as_json: bool, precision: str | None = None) -> int:
         return 0
 
     print(f"precision={resolved_precision}")
+    return 0
+
+
+def _print_logs_max_size(as_json: bool, size_kb: int | None = None) -> int:
+    config = load_app_config()
+    resolved_size_kb = config.logs_max_size_kb
+
+    if size_kb is not None:
+        resolved_size_kb = normalize_logs_max_size_kb(size_kb)
+        save_app_config(
+            AppConfig(
+                remote=config.remote,
+                root=config.root,
+                logs_precision=config.logs_precision,
+                logs_max_size_kb=resolved_size_kb,
+            )
+        )
+
+    if as_json:
+        print(json.dumps({"max_size_kb": resolved_size_kb}, indent=2))
+        return 0
+
+    print(f"max_size_kb={resolved_size_kb}")
     return 0
 
 
@@ -687,6 +730,7 @@ def _print_config_root(as_json: bool, root: str | None = None, reset_root: bool 
                 remote=config.remote,
                 root=resolved_root,
                 logs_precision=config.logs_precision,
+                logs_max_size_kb=config.logs_max_size_kb,
             )
         )
     elif reset_root:
@@ -696,6 +740,7 @@ def _print_config_root(as_json: bool, root: str | None = None, reset_root: bool 
                 remote=config.remote,
                 root=resolved_root,
                 logs_precision=config.logs_precision,
+                logs_max_size_kb=config.logs_max_size_kb,
             )
         )
 
@@ -901,6 +946,12 @@ def main(argv: list[str] | None = None) -> int:
                         return _print_logs_precision(args.as_json)
                     if args.config_logs_precision_command == "set":
                         return _print_logs_precision(args.as_json, args.precision)
+
+                if args.config_logs_command == "max-size":
+                    if args.config_logs_max_size_command == "show":
+                        return _print_logs_max_size(args.as_json)
+                    if args.config_logs_max_size_command == "set":
+                        return _print_logs_max_size(args.as_json, args.size_kb)
 
                 config_parser = next(
                     action for action in parser._actions if isinstance(action, argparse._SubParsersAction)

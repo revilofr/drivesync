@@ -115,6 +115,35 @@ class ConfigCliTests(unittest.TestCase):
         self.assertEqual(show_exit_code, 0)
         self.assertEqual(payload["precision"], "full")
 
+    def test_config_logs_max_size_defaults_to_10_kb(self) -> None:
+        with tempfile.TemporaryFile(mode="w+") as stdout:
+            from contextlib import redirect_stdout
+
+            with redirect_stdout(stdout):
+                exit_code = main(["config", "logs", "max-size", "show", "--json"])
+
+            stdout.seek(0)
+            payload = json.load(stdout)
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(payload["max_size_kb"], 10)
+
+    def test_config_logs_max_size_set(self) -> None:
+        exit_code = main(["config", "logs", "max-size", "set", "64"])
+        self.assertEqual(exit_code, 0)
+
+        with tempfile.TemporaryFile(mode="w+") as stdout:
+            from contextlib import redirect_stdout
+
+            with redirect_stdout(stdout):
+                show_exit_code = main(["config", "logs", "max-size", "show", "--json"])
+
+            stdout.seek(0)
+            payload = json.load(stdout)
+
+        self.assertEqual(show_exit_code, 0)
+        self.assertEqual(payload["max_size_kb"], 64)
+
     def test_config_root_defaults_to_drivesync(self) -> None:
         with tempfile.TemporaryFile(mode="w+") as stdout:
             from contextlib import redirect_stdout

@@ -143,7 +143,7 @@ _drivesync() {
                 esac
             elif [[ "$sub" == "logs" ]]; then
                 if [[ ${COMP_CWORD} -eq 3 ]]; then
-                    COMPREPLY=( $(compgen -W "precision" -- "$cur") )
+                    COMPREPLY=( $(compgen -W "precision max-size" -- "$cur") )
                     return 0
                 fi
 
@@ -160,6 +160,23 @@ _drivesync() {
                         set)
                             if [[ ${COMP_CWORD} -eq 5 ]]; then
                                 COMPREPLY=( $(compgen -W "light full" -- "$cur") )
+                                return 0
+                            fi
+                            COMPREPLY=( $(compgen -W "--json" -- "$cur") )
+                            ;;
+                    esac
+                elif [[ "$sub2" == "max-size" ]]; then
+                    if [[ ${COMP_CWORD} -eq 4 ]]; then
+                        COMPREPLY=( $(compgen -W "show set" -- "$cur") )
+                        return 0
+                    fi
+
+                    case "$sub3" in
+                        show)
+                            COMPREPLY=( $(compgen -W "--json" -- "$cur") )
+                            ;;
+                        set)
+                            if [[ ${COMP_CWORD} -eq 5 ]]; then
                                 return 0
                             fi
                             COMPREPLY=( $(compgen -W "--json" -- "$cur") )

@@ -9,6 +9,7 @@ import os
 APP_NAME = "drivesync"
 DEFAULT_REMOTE_ROOT = "DriveSync"
 DEFAULT_LOGS_PRECISION = "light"
+DEFAULT_LOGS_MAX_SIZE_KB = 10
 VALID_LOGS_PRECISIONS = {"light", "full"}
 CONFIG_PATH_OVERRIDE_FILE = "config_path"
 
@@ -18,6 +19,7 @@ class AppConfig:
     remote: str | None = None
     root: str = DEFAULT_REMOTE_ROOT
     logs_precision: str = DEFAULT_LOGS_PRECISION
+    logs_max_size_kb: int = DEFAULT_LOGS_MAX_SIZE_KB
 
 
 def normalize_remote_root(value: str | None) -> str:
@@ -34,6 +36,24 @@ def normalize_logs_precision(value: str | None) -> str:
     if normalized not in VALID_LOGS_PRECISIONS:
         raise ValueError(
             f"Invalid logs precision: {value}. Expected one of: light, full"
+        )
+    return normalized
+
+
+def normalize_logs_max_size_kb(value: int | str | None) -> int:
+    if value is None:
+        return DEFAULT_LOGS_MAX_SIZE_KB
+
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"Invalid logs max size: {value}. Expected a positive integer in KB"
+        ) from exc
+
+    if normalized <= 0:
+        raise ValueError(
+            f"Invalid logs max size: {value}. Expected a positive integer in KB"
         )
     return normalized
 
@@ -135,7 +155,15 @@ def load_app_config() -> AppConfig:
     logs_precision = normalize_logs_precision(
         parser.get("logs", "precision", fallback=DEFAULT_LOGS_PRECISION)
     )
-    return AppConfig(remote=remote, root=root, logs_precision=logs_precision)
+    logs_max_size_kb = normalize_logs_max_size_kb(
+        parser.get("logs", "max_size_kb", fallback=str(DEFAULT_LOGS_MAX_SIZE_KB))
+    )
+    return AppConfig(
+        remote=remote,
+        root=root,
+        logs_precision=logs_precision,
+        logs_max_size_kb=logs_max_size_kb,
+    )
 
 
 def save_app_config(config: AppConfig) -> Path:
@@ -144,7 +172,10 @@ def save_app_config(config: AppConfig) -> Path:
     parser["drive"] = {"root": normalize_remote_root(config.root)}
     if config.remote:
         parser["drive"]["remote"] = config.remote
-    parser["logs"] = {"precision": normalize_logs_precision(config.logs_precision)}
+    parser["logs"] = {
+        "precision": normalize_logs_precision(config.logs_precision),
+        "max_size_kb": str(normalize_logs_max_size_kb(config.logs_max_size_kb)),
+    }
 
     config_file = get_config_file()
     with config_file.open("w", encoding="utf-8") as handle:
