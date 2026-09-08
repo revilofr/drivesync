@@ -1,29 +1,29 @@
 # DriveSync
 
-DriveSync est une petite CLI Linux qui orchestre `rclone` pour des synchronisations simples de repertoires locaux.
+DriveSync is a lightweight Linux CLI that orchestrates `rclone` for simple synchronization of local directories.
 
-## Pourquoi DriveSync ?
+## Why DriveSync?
 
-Google Drive ne fournit pas de client de synchronisation desktop officiel pour Linux.
+Google Drive does not provide an official desktop synchronization client for Linux.
 
-`rclone` permet de combler ce manque, notamment avec `bisync`, mais son utilisation quotidienne reste assez technique : configuration des remotes, gestion des chemins, automatisation, logs, resynchronisation et précautions liées aux opérations sensibles.
+`rclone` fills this gap, especially with `bisync`, but daily usage remains quite technical: configuring remotes, managing paths, automation, logs, resynchronization, and precautions for sensitive operations.
 
-DriveSync fournit une couche simple au-dessus de `rclone` pour gérer ces synchronisations plus facilement.
+DriveSync provides a simple layer above `rclone` to manage these synchronizations more easily.
 
-### Ce que DriveSync apporte
+### What DriveSync brings
 
-- configuration persistante des dossiers local ↔ distant ;
-- lancement simplifié des synchronisations ;
-- automatisation et planification ;
-- consultation des statuts, historiques et logs ;
-- encadrement des opérations sensibles comme `bisync --resync` ;
-- gestion centralisée de plusieurs synchronisations.
+- persistent configuration of local ↔ remote folders ;
+- simplified launch of synchronizations ;
+- automation and scheduling ;
+- checking statuses, histories, and logs ;
+- safeguards for sensitive operations like `bisync --resync` ;
+- centralized management of multiple synchronizations.
 
-L'objectif est simple :
+The goal is simple:
 
-> **Configurer `rclone` une fois, puis utiliser DriveSync au quotidien.**
+> **Configure `rclone` once, then use DriveSync daily.**
 
-DriveSync ne réimplémente pas le moteur de synchronisation : il s'appuie volontairement sur `rclone`, un projet open source mature distribué sous licence MIT.
+DriveSync does not reimplement the synchronization engine: it deliberately relies on `rclone`, a mature open source project distributed under the MIT license.
 
 ```
 DriveSync
@@ -35,46 +35,46 @@ rclone bisync
 Google Drive
 ```
 
-La configuration initiale de Google Drive reste nécessaire, notamment la création des identifiants OAuth et du remote `rclone`.
+Initial Google Drive configuration remains necessary, in particular the creation of OAuth credentials and the `rclone` remote.
 
-Une documentation dédiée est disponible dans [`DRIVESYNC_GOOGLE_AUTH.md`](DRIVESYNC_GOOGLE_AUTH.md).
+Dedicated documentation is available in [`DRIVESYNC_GOOGLE_AUTH.md`](DRIVESYNC_GOOGLE_AUTH.md).
 
-### Dépendance à rclone
+### Dependency on rclone
 
-DriveSync utilise [`rclone`](https://rclone.org/) comme moteur de synchronisation.
+DriveSync uses [`rclone`](https://rclone.org/) as its synchronization engine.
 
-`rclone` est un projet indépendant distribué sous licence MIT.
+`rclone` is an independent project distributed under the MIT license.
 
-DriveSync n'est ni affilié ni officiellement approuvé par le projet rclone ou par Google.
+DriveSync is neither affiliated with nor officially endorsed by the rclone project or Google.
 
-## Etat actuel du projet
+## Current project status
 
-Etat actuel du projet :
+Current state of the project:
 
-- stockage de configuration
-- enregistrement des repertoires geres
-- listing et suppression des repertoires enregistres
+- configuration storage
+- registration of managed directories
+- listing and deletion of registered directories
 
-Le moteur de synchronisation est volontairement delegue a `rclone`.
+The synchronization engine is intentionally delegated to `rclone`.
 
-La documentation de prise en main est dans [GETTING_STARTED.md](GETTING_STARTED.md).
-La documentation detaillee OAuth Google Drive est dans [DRIVESYNC_GOOGLE_AUTH.md](DRIVESYNC_GOOGLE_AUTH.md).
+Getting started documentation is in [GETTING_STARTED.md](GETTING_STARTED.md).
+Detailed Google Drive OAuth documentation is in [DRIVESYNC_GOOGLE_AUTH.md](DRIVESYNC_GOOGLE_AUTH.md).
 
-## Projet
+## Project
 
-DriveSync a ete cree par `revilofr`, avec l'aide de Claude.
+DriveSync was created by `revilofr`, with the help of Claude.
 
-Le projet est open source et tout le monde est le bienvenu pour l'utiliser, le cloner, l'ameliorer et l'adapter a ses besoins.
+The project is open source and everyone is welcome to use it, clone it, improve it, and adapt it to their needs.
 
-## Lancement rapide
+## Quick start
 
-Depuis la racine du projet :
+From the project root:
 
 ```bash
 PYTHONPATH=. python3 -m drivesync dir list
 ```
 
-Commande courte `drivesync` (sans `python3 -m`) sur Ubuntu 24 :
+Short `drivesync` command (without `python3 -m`) on Ubuntu 24:
 
 ```bash
 python3 -m venv .venv
@@ -82,13 +82,13 @@ python3 -m venv .venv
 pip install -e .
 ```
 
-Puis verifier :
+Then verify:
 
 ```bash
 drivesync --help
 ```
 
-Option sans activer l'environnement a chaque session :
+Option to avoid activating the environment each session:
 
 ```bash
 echo "alias drivesync='/path/to/drivesync/.venv/bin/drivesync'" >> ~/.bashrc
@@ -96,26 +96,26 @@ source ~/.bashrc
 drivesync --help
 ```
 
-Activer l'autocompletion Bash :
+Enable Bash autocompletion:
 
 ```bash
 source /path/to/drivesync/completion.bash
 ```
 
-Activer l'autocompletion Zsh :
+Enable Zsh autocompletion:
 
 ```zsh
 source /path/to/drivesync/completion.zsh
 ```
 
-Activation persistante :
+Persistent Bash activation:
 
 ```bash
 echo "source /path/to/drivesync/completion.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-Activation persistante Zsh :
+Persistent Zsh activation:
 
 ```zsh
 echo "source /path/to/drivesync/completion.zsh" >> ~/.zshrc
@@ -124,52 +124,52 @@ source ~/.zshrc
 
 ## Tests
 
-Lancer la suite de tests :
+Run the test suite:
 
 ```bash
 python3 -m unittest discover -s tests
 ```
 
-## Prerequis
+## Prerequisites
 
 - Linux
-- Python 3.10 ou plus recent
-- aucune dependance Python applicative externe pour le MVP actuel
-- `rclone` est necessaire pour `auth`, `sync check` et `sync run`, mais pas pour `dir add/remove/list/show`
-- `cron` est necessaire pour `schedule install` et `schedule uninstall`
+- Python 3.10 or later
+- no external Python applicative dependencies for the current MVP
+- `rclone` is required for `auth`, `sync check`, and `sync run`, but not for `dir add/remove/list/show`
+- `cron` is required for `schedule install` and `schedule uninstall`
 
-## Dependances
+## Dependencies
 
-Dependances runtime (etat actuel) :
+Runtime dependencies (current state):
 
 - Python 3.10+
-- bibliotheque standard Python uniquement
+- Python standard library only
 
-Dependances outils (developpement / installation locale) :
+Tool dependencies (development / local installation):
 
 - `pip`
 - `setuptools`
 
-Dependances systeme :
+System dependencies:
 
 - Linux
-- `rclone` (obligatoire pour `auth`, `sync check` et `sync run`)
-- `cron` (obligatoire pour `schedule install` et `schedule uninstall`)
-- `rsync` n'est pas une dependance
+- `rclone` (required for `auth`, `sync check`, and `sync run`)
+- `cron` (required for `schedule install` and `schedule uninstall`)
+- `rsync` is not a dependency
 
-Version `rclone` recommandee pour DriveSync :
+Recommended `rclone` version for DriveSync:
 
-- minimum raisonnable : `>= 1.66`
-- recommande : `>= 1.71`
-- idealement : une version stable recente
+- reasonable minimum: `>= 1.66`
+- recommended: `>= 1.71`
+- ideally: a recent stable version
 
-Verifier si `rclone` est installe :
+Check if `rclone` is installed:
 
 ```bash
 command -v rclone
 ```
 
-Verifier aussi sa version :
+Also verify its version:
 
 ```bash
 rclone version
@@ -177,24 +177,24 @@ rclone version
 
 ## Documentation
 
-Voir [GETTING_STARTED.md](GETTING_STARTED.md) pour :
+See [GETTING_STARTED.md](GETTING_STARTED.md) for:
 
-- l'installation locale
-- la procedure d'installation de `rclone` (sans desinstallation)
-- les commandes de lancement
-- les tests
-- le stockage de configuration
-- l'installation de `rclone` sur Ubuntu
+- local installation
+- `rclone` installation procedure (without uninstallation)
+- launch commands
+- tests
+- configuration storage
+- `rclone` installation on Ubuntu
 
-Voir [DRIVESYNC_GOOGLE_AUTH.md](DRIVESYNC_GOOGLE_AUTH.md) pour :
+See [DRIVESYNC_GOOGLE_AUTH.md](DRIVESYNC_GOOGLE_AUTH.md) for:
 
-- la configuration complete Google Cloud OAuth
-- la creation d'un remote `rclone` Google Drive
-- les checks de validation `rclone` avant usage DriveSync
+- complete Google Cloud OAuth configuration
+- creation of a `rclone` Google Drive remote
+- `rclone` validation checks before DriveSync usage
 
-## Etat du scope actuel
+## Current scope status
 
-Commandes disponibles :
+Available commands:
 
 ```bash
 drivesync dir add <id> <directory>
@@ -247,42 +247,42 @@ drivesync auth status
 drivesync auth status --json
 ```
 
-`sync status` affiche le dernier etat connu par repertoire (ou `never_run`).
-En sortie texte, `sync status` affiche aussi la date de derniere synchronisation connue.
-`sync logs` affiche le journal DriveSync des executions depuis le fichier local `sync-history.jsonl`.
-`sync logs --raw` affiche la sortie brute capturee de `rclone` pour debug.
+`sync status` displays the last known state by directory (or `never_run`).
+In text output, `sync status` also displays the last known synchronization date.
+`sync logs` displays the DriveSync log of executions from the local `sync-history.jsonl` file.
+`sync logs --raw` displays raw captured `rclone` output for debugging.
 
-Planification :
+Scheduling:
 
-- `schedule` est l'interface metier DriveSync pour la planification
-- le backend MVP s'appuie sur `crontab` sous Linux
-- `schedule set/remove` modifient la configuration locale DriveSync
-- `schedule install` applique la configuration locale courante dans la crontab utilisateur
-- `schedule uninstall` retire uniquement le bloc gere par DriveSync dans la crontab utilisateur, sans effacer la configuration locale
-- apres un `schedule set` ou `schedule remove`, la crontab ne change pas tant que `schedule install` ou `schedule uninstall` n'a pas ete execute
-- chaque execution planifiee lance `sync run` et est journalisee dans l'historique interne
+- `schedule` is the DriveSync business interface for scheduling
+- the MVP backend relies on Linux `crontab`
+- `schedule set/remove` modify the local DriveSync configuration
+- `schedule install` applies the current local configuration to the user crontab
+- `schedule uninstall` removes only the DriveSync-managed block from the user crontab, without erasing the local configuration
+- after a `schedule set` or `schedule remove`, crontab does not change until `schedule install` or `schedule uninstall` is executed
+- each scheduled execution launches `sync run` and is logged in the internal history
 
-Workflow recommande :
+Recommended workflow:
 
-- `schedule set ...` pour enregistrer ou modifier la frequence voulue
-- `schedule preview` pour verifier le bloc cron genere
-- `schedule install` pour appliquer la configuration courante dans `crontab`
-- `schedule remove ...` pour retirer une entree locale devenue inutile
-- `schedule uninstall` si tu veux retirer completement le bloc DriveSync de `crontab`
+- `schedule set ...` to record or modify the desired frequency
+- `schedule preview` to verify the generated cron block
+- `schedule install` to apply the current configuration to `crontab`
+- `schedule remove ...` to remove a local entry that is no longer needed
+- `schedule uninstall` to completely remove the DriveSync block from `crontab`
 
-Frequences supportees dans le MVP :
+Supported frequencies in the MVP:
 
 - `5minutes`
 - `hourly`
 - `daily --at HH:MM`
 - `weekly --day monday..sunday --at HH:MM`
 
-Precision de logs :
+Log precision:
 
-- `light` : capture brute legere, suffisante pour l'usage courant
-- `full` : capture plus verbeuse de `rclone` pour diagnostic approfondi
+- `light`: light raw capture, sufficient for normal use
+- `full`: more verbose `rclone` capture for in-depth diagnosis
 
-Configuration :
+Configuration:
 
 ```bash
 drivesync config logs precision show
@@ -290,13 +290,13 @@ drivesync config logs precision set light
 drivesync config logs precision set full
 ```
 
-Securite `--resync`:
+`--resync` security:
 
-- cette regle est independante des collisions de mapping
-- meme avec un seul id `dir` et un `remote-dir` unique, si local et remote sont tous les deux non vides, DriveSync refuse `--resync` par defaut
-- `--force` sert uniquement a confirmer explicitement ce cas risque
+- this rule is independent of mapping collisions
+- even with a single `dir` id and a unique `remote-dir`, if both local and remote are non-empty, DriveSync refuses `--resync` by default
+- `--force` is only used to explicitly confirm this risky case
 
-Premiere synchronisation d'un id :
+First synchronization of an id:
 
 - DriveSync tente automatiquement un `--resync` si l'etat bisync est absent
 - si local et remote sont deja non vides, DriveSync n'auto-force pas et demande une confirmation explicite

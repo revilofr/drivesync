@@ -1,273 +1,273 @@
-# DriveSync - Lancement, tests et dependances
+# DriveSync - Getting started, tests, and dependencies
 
-## Etat actuel du projet
+## Current project state
 
-Guide detaille OAuth Google Drive : [DRIVESYNC_GOOGLE_AUTH.md](DRIVESYNC_GOOGLE_AUTH.md)
+Detailed Google Drive OAuth guide: [DRIVESYNC_GOOGLE_AUTH.md](DRIVESYNC_GOOGLE_AUTH.md)
 
-Configurer le chemin de config via la CLI :
+Set the config path via the CLI:
 
 ```bash
 PYTHONPATH=. python3 -m drivesync config path set ~/.drivesync
 PYTHONPATH=. python3 -m drivesync config path show
 ```
 
-Le projet est en cours de construction.
+The project is under construction.
 
-Ce qui fonctionne actuellement :
+## What works currently:
 
-- structure du package Python
+- Python package structure
 - CLI `drivesync`
-- commandes `dir add`, `dir remove`, `dir list` (avec mapping remote optionnel)
-- creation interactive du dossier local manquant sur `dir add` (ou `--create`)
-- commande `sync check` (preflight `rclone` + verification de version)
-- commande `auth setup` (selection/validation d'un remote rclone et sauvegarde de la config)
-- commande `auth status` (validation remote configure + accessibilite)
-- commande `sync run` (lance `rclone bisync` sur un id ou sur tous les repertoires configures)
-- configuration persistante de la precision des logs (`light` ou `full`)
-- configuration persistante du dossier racine distant (`DriveSync` par defaut)
-- planification MVP via `schedule` avec backend `crontab`
-- tests unitaires sur cette premiere partie
-- autocompletion Bash et Zsh
+- commands `dir add`, `dir remove`, `dir list` (with optional remote mapping)
+- interactive creation of missing local folder on `dir add` (or `--create`)
+- command `sync check` (rclone preflight + version check)
+- command `auth setup` (select/validate an rclone remote and save config)
+- command `auth status` (validate configured remote + accessibility)
+- command `sync run` (launches `rclone bisync` on an id or on all configured directories)
+- persistent configuration of log precision (`light` or `full`)
+- persistent configuration of remote root folder (`DriveSync` by default)
+- MVP scheduling via `schedule` with `crontab` backend
+- unit tests on this first part
+- Bash and Zsh autocompletion
 
-Ce qui n'est pas encore implemente :
+## What is not yet implemented:
 
 - `auth reconnect`
 
-Historique de sync :
+## Sync history:
 
-- les executions `sync run` sont journalisees dans `sync-history.jsonl`
-- `sync status` lit le dernier etat connu par id et affiche aussi la derniere date connue en sortie texte
-- `sync logs` affiche le journal DriveSync
-- `sync logs --raw` affiche la sortie brute capturee de `rclone`
-- `config logs precision show|set` pilote le niveau de verbosite capture pour les prochains runs
+- `sync run` executions are logged in `sync-history.jsonl`
+- `sync status` reads the last known state by id and also displays the last known date in text output
+- `sync logs` displays the DriveSync journal
+- `sync logs --raw` displays the raw captured output of `rclone`
+- `config logs precision show|set` controls the verbosity level captured for next runs
 
-Planification :
+## Scheduling:
 
-- `schedule` est la couche DriveSync pour planifier les synchronisations
-- le backend MVP utilise la crontab utilisateur Linux
-- `schedule set/remove` changent la configuration locale
-- `schedule install/uninstall` appliquent ou retirent le bloc DriveSync dans la crontab
-- apres un `schedule set` ou `schedule remove`, il faut executer `schedule install` ou `schedule uninstall` pour mettre a jour la crontab reelle
-- une execution planifiee lance `sync run <id>` et est journalisee dans l'historique interne
+- `schedule` is the DriveSync layer for scheduling synchronizations
+- the MVP backend uses the Linux user crontab
+- `schedule set/remove` change the local configuration
+- `schedule install/uninstall` apply or remove the DriveSync block in crontab
+- after a `schedule set` or `schedule remove`, you must run `schedule install` or `schedule uninstall` to update the actual crontab
+- a scheduled execution launches `sync run <id>` and is logged in the internal history
 
-Frequences supportees :
+## Supported frequencies:
 
 - `5minutes`
 - `hourly`
 - `daily --at HH:MM`
 - `weekly --day monday..sunday --at HH:MM`
 
-Racine distante :
+## Remote root:
 
-- par defaut, DriveSync synchronise dans `DriveSync/<id>` sur le remote configure
-- `config root` configure le remote root directory in cloud storage
-- `config root set` permet de changer ce dossier racine distant, par exemple `Backups/DriveSync`
-- `config root show|reset` permettent d'inspecter ou restaurer la valeur par defaut
+- by default, DriveSync synchronizes in `DriveSync/<id>` on the configured remote
+- `config root` configures the remote root directory in cloud storage
+- `config root set` allows you to change this remote root folder, for example `Backups/DriveSync`
+- `config root show|reset` allow you to inspect or restore the default value
 
-## Python requis
+## Required Python
 
-Version minimale :
+Minimum version:
 
 ```text
 Python 3.10
 ```
 
-Cette contrainte est definie dans `pyproject.toml` :
+This constraint is defined in `pyproject.toml`:
 
 ```toml
 requires-python = ">=3.10"
 ```
 
-Verifier la version installee :
+Check the installed version:
 
 ```bash
 python3 --version
 ```
 
-Exemple attendu :
+Expected example:
 
 ```text
 Python 3.10.x
 ```
 
-ou plus recent.
+or later.
 
-## Installation de Python sur Ubuntu 24
+## Python installation on Ubuntu 24
 
-Sur Ubuntu 24, la commande a utiliser est normalement `python3`, pas `python`.
+On Ubuntu 24, the command to use is normally `python3`, not `python`.
 
-Verifier d'abord si Python 3 est deja disponible :
+First check if Python 3 is already available:
 
 ```bash
 python3 --version
 ```
 
-Si la commande n'existe pas, installe les paquets de base :
+If the command does not exist, install the basic packages:
 
 ```bash
 sudo apt update
 sudo apt install python3 python3-pip python3-venv
 ```
 
-Verifier ensuite :
+Then verify:
 
 ```bash
 python3 --version
 python3 -m pip --version
 ```
 
-Si tu tapes `python --version` et que la commande n'existe pas, ce n'est pas anormal sur Ubuntu 24.
+If you type `python --version` and the command does not exist, this is normal on Ubuntu 24.
 
-Dans toute la documentation de ce projet, il faut utiliser :
+Throughout this project documentation, you must use:
 
 ```bash
 python3
 ```
 
-et non :
+and not:
 
 ```bash
 python
 ```
 
-## Dependances du projet
+## Project dependencies
 
-### Dependances runtime (etat actuel)
+### Runtime dependencies (current state)
 
 - Linux
 - Python `>= 3.10`
-- bibliotheque standard Python uniquement
-- aucune dependance Python tierce pour le MVP actuel
+- Python standard library only
+- no third-party Python dependency for the current MVP
 
-### Dependances outils (dev / install locale)
+### Tool dependencies (dev / local install)
 
 - `pip`
 - `setuptools`
 
-### Dependances systeme
+### System dependencies
 
 - Linux
-- `rclone` sera obligatoire pour les commandes `auth`, `sync check` et `sync run`
-- `cron` est obligatoire pour `schedule install` et `schedule uninstall`
-- `rsync` n'est pas une dependance de DriveSync
+- `rclone` will be required for `auth`, `sync check`, and `sync run` commands
+- `cron` is required for `schedule install` and `schedule uninstall`
+- `rsync` is not a dependency of DriveSync
 
-Note : pour les commandes `dir add/remove/list` de la V1 actuelle, `rclone` n'est pas necessaire.
+Note: for V1 current commands `dir add/remove/list`, `rclone` is not required.
 
-## Faut-il installer rsync ?
+## Do I need to install rsync?
 
-Non.
+No.
 
-DriveSync ne repose pas sur `rsync`.
+DriveSync does not rely on `rsync`.
 
-L'outil cible pour la synchronisation est :
+The target tool for synchronization is:
 
 ```text
 rclone
 ```
 
-Donc :
+So:
 
-- pas besoin de `rsync`
-- `rclone` sera necessaire plus tard pour les commandes de sync/auth/check
-- pour le MVP actuel (`dir add/remove/list`), `rclone` n'est pas necessaire
+- no need for `rsync`
+- `rclone` will be required later for sync/auth/check commands
+- for the current MVP (`dir add/remove/list`), `rclone` is not required
 
-## Faut-il installer rclone ?
+## Do I need to install rclone?
 
-Pas pour tester la partie actuellement implemente.
+Not to test the currently implemented part.
 
-Oui pour la suite du projet, car DriveSync est pense comme une surcouche de `rclone`.
+Yes for the continuation of the project, because DriveSync is designed as a layer above `rclone`.
 
-Quand `auth`, `sync check` et `sync run` sont utilises, `rclone` doit etre installe sur la machine cible.
+When `auth`, `sync check`, and `sync run` are used, `rclone` must be installed on the target machine.
 
-### Comment verifier si `rclone` est installe
+### How to check if `rclone` is installed
 
-Commande minimale :
+Minimal command:
 
 ```bash
 command -v rclone
 ```
 
-Si `rclone` est installe, cette commande affiche un chemin, par exemple :
+If `rclone` is installed, this command displays a path, for example:
 
 ```text
 /usr/bin/rclone
 ```
 
-Si rien ne s'affiche, `rclone` n'est probablement pas installe.
+If nothing is displayed, `rclone` is probably not installed.
 
-Verifier si `rclone` est present :
+Check if `rclone` is present:
 
 ```bash
 command -v rclone
 ```
 
-Pour confirmer proprement et voir la version :
+To confirm properly and see the version:
 
 ```bash
 rclone version
 ```
 
-Si tu obtiens une erreur du type `command not found`, alors `rclone` n'est pas installe.
+If you get an error like `command not found`, then `rclone` is not installed.
 
-Dans l'environnement actuel, `rclone` n'est pas installe.
+In the current environment, `rclone` is not installed.
 
-## Quelle version de rclone utiliser
+## Which version of rclone to use
 
-Pour DriveSync, il ne faut pas viser une version ancienne de `rclone bisync`.
+For DriveSync, you should not target an old version of `rclone bisync`.
 
-Recommandation pratique :
+Practical recommendation:
 
-- minimum raisonnable : `rclone >= 1.66`
-- version recommandee : `rclone >= 1.71`
-- idealement : une version stable recente, par exemple `1.74.x` ou `1.75.x`
+- reasonable minimum: `rclone >= 1.66`
+- recommended version: `rclone >= 1.71`
+- ideally: a recent stable version, for example `1.74.x` or `1.75.x`
 
-Pourquoi `1.66` comme minimum :
+Why `1.66` as minimum:
 
-- `bisync` y devient nettement plus robuste
-- `--recover` est disponible
-- `--max-lock` est disponible
-- la gestion moderne des comparaisons et de la recovery y est mieux posee
-- le support de Google Docs dans `bisync` y est ameliore
+- `bisync` becomes significantly more robust there
+- `--recover` is available
+- `--max-lock` is available
+- modern comparison and recovery management is better established there
+- Google Docs support in `bisync` is improved there
 
-Pourquoi `1.71` comme recommandation :
+Why `1.71` as recommendation:
 
-- `bisync` y est officiellement sorti de beta
-- c'est un meilleur socle pour un outil qui privilegie la securite des donnees
+- `bisync` officially exited beta there
+- it is a better foundation for a tool that prioritizes data security
 
-Point important sur ta version actuelle :
+Important point about your current version:
 
 ```text
 rclone v1.60.1-DEV
 ```
 
-Cette version est trop ancienne pour servir de base confortable a la V1 de DriveSync si on veut s'appuyer sur les comportements modernes de `bisync`.
+This version is too old to comfortably serve as a base for DriveSync V1 if you want to rely on modern `bisync` behaviors.
 
-De plus, il vaut mieux eviter les versions `-DEV` pour un usage normal, sauf si tu sais exactement pourquoi tu utilises ce build.
+Also, it is better to avoid `-DEV` versions for normal use, unless you know exactly why you are using this build.
 
-## Installation de rclone sur Ubuntu
+## Installing rclone on Ubuntu
 
-Pour les commandes futures de synchronisation, il faudra installer `rclone`.
+For future synchronization commands, you will need to install `rclone`.
 
-Cette procedure n'inclut pas de desinstallation.
+This procedure does not include uninstallation.
 
-### Methode recommandee (script officiel)
+### Recommended method (official script)
 
 ```bash
 sudo -v
 curl https://rclone.org/install.sh | sudo bash
 ```
 
-Verifier ensuite :
+Then verify:
 
 ```bash
 rclone version
 ```
 
-La methode ci-dessus installe une version stable recente sans imposer de desinstallation prealable.
+The above method installs a recent stable version without requiring prior uninstallation.
 
-### Methode version precise (deb officiel)
+### Specific version method (official deb)
 
-Exemple avec `1.75.1` :
+Example with `1.75.1`:
 
 ```bash
 cd /tmp
@@ -276,40 +276,40 @@ sudo apt install ./rclone-v1.75.1-linux-amd64.deb
 rclone version
 ```
 
-Cette methode est utile si tu veux figer une version exacte.
+This method is useful if you want to pin an exact version.
 
-### Option simple via apt
+### Simple option via apt
 
 ```bash
 sudo apt update
 sudo apt install rclone
 ```
 
-Verifier ensuite :
+Then verify:
 
 ```bash
 rclone version
 ```
 
-### Point important
+### Important point
 
-La version disponible via `apt` depend de ta version d'Ubuntu et peut etre en retard par rapport aux versions stables recentes de `rclone`.
+The version available via `apt` depends on your Ubuntu version and may lag behind recent stable `rclone` versions.
 
-Comme DriveSync doit s'aligner sur le comportement reel de `rclone`, il faudra verifier les options disponibles sur ta machine avec :
+As DriveSync must align with actual `rclone` behavior, you will need to check available options on your machine with:
 
 ```bash
 rclone bisync --help
 ```
 
-et au besoin :
+and if needed:
 
 ```bash
 rclone help flags
 ```
 
-Dans cet environnement, je n'ai pas pu valider ces commandes car `rclone` n'y est pas installe.
+In this environment, I was unable to validate these commands because `rclone` is not installed there.
 
-## Arborescence utile
+## Useful directory structure
 
 ```text
 drivesync/
@@ -326,49 +326,49 @@ drivesync/
 └── README.md
 ```
 
-## Autocompletion shell
+## Shell autocompletion
 
-Activer Bash pour la session courante :
+Enable Bash for the current session:
 
 ```bash
 source /path/to/drivesync/completion.bash
 ```
 
-Rendre persistant Bash :
+Make Bash persistent:
 
 ```bash
 echo "source /path/to/drivesync/completion.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
-Activer Zsh pour la session courante :
+Enable Zsh for the current session:
 
 ```zsh
 source /path/to/drivesync/completion.zsh
 ```
 
-Rendre persistant Zsh :
+Make Zsh persistent:
 
 ```zsh
 echo "source /path/to/drivesync/completion.zsh" >> ~/.zshrc
 source ~/.zshrc
 ```
 
-## Comment lancer le projet
+## How to run the project
 
-Depuis la racine du repo :
+From the repo root:
 
 ```bash
 cd /path/to/drivesync
 ```
 
-### Methode 1 - execution directe en module Python
+### Method 1 - direct execution as a Python module
 
 ```bash
 PYTHONPATH=. python3 -m drivesync dir list
 ```
 
-Verifier aussi le preflight `rclone` :
+Also verify the `rclone` preflight:
 
 ```bash
 PYTHONPATH=. python3 -m drivesync sync check
@@ -395,50 +395,50 @@ PYTHONPATH=. python3 -m drivesync config path show
 PYTHONPATH=. python3 -m drivesync config path show --json
 ```
 
-Important pour la planification :
+Important for scheduling:
 
-- `schedule set` et `schedule remove` modifient seulement la configuration DriveSync stockee localement
-- `schedule install` ecrit cette configuration dans la crontab utilisateur
-- `schedule uninstall` retire seulement le bloc DriveSync de la crontab et laisse la configuration locale intacte
-- si la crontab contient encore une ancienne frequence, relancer `PYTHONPATH=. python3 -m drivesync schedule install`
+- `schedule set` and `schedule remove` only modify the locally stored DriveSync configuration
+- `schedule install` writes this configuration to the user crontab
+- `schedule uninstall` removes only the DriveSync block from crontab and leaves the local configuration intact
+- if crontab still contains an old frequency, rerun `PYTHONPATH=. python3 -m drivesync schedule install`
 
-Exemple de binding explicite local vers remote :
+Example of explicit local to remote binding:
 
 ```bash
 PYTHONPATH=. python3 -m drivesync dir add documents ~/Documents --remote-dir perso/documents
 PYTHONPATH=. python3 -m drivesync sync run documents
 ```
 
-Le remote effectif sera :
+The effective remote will be:
 
 ```text
 <remote_configure>:<root>/perso/documents
 ```
 
-Protection anti-ecrasement sur `--resync` :
+Anti-overwrite protection on `--resync`:
 
-- cette protection n'est pas liee au cas "deux ids vers le meme remote-dir"
-- meme avec un mapping unique (1 id -> 1 remote-dir), si local et remote contiennent deja des fichiers, la commande est refusee
-- pour confirmer explicitement ce cas, ajouter `--force`
+- this protection is not related to the "two ids to the same remote-dir" case
+- even with a unique mapping (1 id -> 1 remote-dir), if local and remote already contain files, the command is refused
+- to explicitly confirm this case, add `--force`
 
-Premier run d'un id :
+First run of an id:
 
-- si l'etat bisync n'existe pas encore, DriveSync tente automatiquement un `--resync`
-- exception de securite: si local et remote sont deja non vides, DriveSync demande une confirmation explicite
-- dans ce cas, lancer `sync run <id> --resync --force`
+- if bisync state does not exist yet, DriveSync automatically attempts a `--resync`
+- security exception: if local and remote are already non-empty, DriveSync requests explicit confirmation
+- in this case, run `sync run <id> --resync --force`
 
-Protection anti-collision de mapping :
+Anti-collision mapping protection:
 
-- un sous-dossier remote (`--remote-dir`) ne peut pas etre partage entre deux ids `dir`
-- cela evite que deux repertoires locaux distincts ecrivent sur la meme cible remote
+- a remote subfolder (`--remote-dir`) cannot be shared between two `dir` ids
+- this prevents two separate local directories from writing to the same remote target
 
-Conflits de modification (meme fichier modifie des deux cotes) :
+Conflict modifications (same file modified on both sides):
 
-- la detection et la resolution de conflit sont gerees par `rclone bisync`
-- les suffixes de conflits (ex: `.conflict1`, `.conflict2`) viennent de `rclone`, pas de DriveSync
-- DriveSync orchestre uniquement l'execution et n'invente pas de schema de nommage de conflit
+- conflict detection and resolution are managed by `rclone bisync`
+- conflict suffixes (eg `.conflict1`, `.conflict2`) come from `rclone`, not DriveSync
+- DriveSync only orchestrates execution and does not invent a conflict naming scheme
 
-Exemples :
+Examples:
 
 ```bash
 PYTHONPATH=. python3 -m drivesync dir add documents ~/Documents
@@ -447,9 +447,9 @@ PYTHONPATH=. python3 -m drivesync dir list --json
 PYTHONPATH=. python3 -m drivesync dir remove documents
 ```
 
-### Methode 2 - installation locale du package
+### Method 2 - local package installation
 
-Si tu veux obtenir la commande `drivesync` directement dans ton environnement :
+If you want to get the `drivesync` command directly in your environment:
 
 ```bash
 cd /path/to/drivesync
@@ -458,22 +458,22 @@ python3 -m venv .venv
 pip install .
 ```
 
-Puis :
+Then:
 
 ```bash
 drivesync dir list
 ```
 
-Remarque :
+Note:
 
-- `pip` et `setuptools` doivent etre disponibles pour cette methode
-- si tu ne veux rien installer, la methode 1 suffit
+- `pip` and `setuptools` must be available for this method
+- if you don't want to install anything, method 1 is sufficient
 
-Sur Ubuntu 24, installer avec `python3 -m pip install --user ...` peut etre bloque par PEP 668 (environnement Python externe gere par le systeme). La methode `venv` ci-dessus est la voie recommandee.
+On Ubuntu 24, installing with `python3 -m pip install --user ...` may be blocked by PEP 668 (Python environment managed by the system). The `venv` method above is the recommended approach.
 
-### Methode 3 - mode developpement (recommande)
+### Method 3 - development mode (recommended)
 
-Pour avoir la commande `drivesync` et refleter automatiquement les modifications du code sans reinstaller a chaque changement :
+To get the `drivesync` command and automatically reflect code changes without reinstalling each time:
 
 ```bash
 cd /path/to/drivesync
@@ -482,27 +482,27 @@ python3 -m venv .venv
 pip install -e .
 ```
 
-Verifier ensuite :
+Then verify:
 
 ```bash
 drivesync --help
 ```
 
-Activer l'autocompletion Bash :
+Enable Bash autocompletion:
 
 ```bash
 source /path/to/drivesync/completion.bash
 ```
 
-Si `drivesync` n'est pas trouve, ajoute `~/.local/bin` a ton `PATH` :
+If `drivesync` is not found, add `~/.local/bin` to your `PATH`:
 
 ```bash
 drivesync --help
 ```
 
-Avec `venv`, la commande `drivesync` est disponible tant que l'environnement est active.
+With `venv`, the `drivesync` command is available as long as the environment is active.
 
-Pour l'avoir en permanence sans activer manuellement :
+To have it permanently without manually activating:
 
 ```bash
 echo "alias drivesync='/path/to/drivesync/.venv/bin/drivesync'" >> ~/.bashrc
@@ -510,9 +510,9 @@ source ~/.bashrc
 drivesync --help
 ```
 
-### Methode 4 - alias shell (sans installation)
+### Method 4 - shell alias (without installation)
 
-Si tu preferes ne pas installer le package, tu peux creer un alias :
+If you prefer not to install the package, you can create an alias:
 
 ```bash
 echo "alias drivesync='PYTHONPATH=/path/to/drivesync python3 -m drivesync'" >> ~/.bashrc
@@ -520,11 +520,11 @@ source ~/.bashrc
 drivesync --help
 ```
 
-Avec cette methode, il suffit ensuite de taper `drivesync ...`.
+With this method, you then just need to type `drivesync ...`.
 
-### Option pipx (facultative)
+### Optional pipx option
 
-Si tu preferes ne pas gerer de venv projet, tu peux utiliser `pipx` :
+If you prefer not to manage project venv, you can use `pipx`:
 
 ```bash
 sudo apt update
@@ -532,7 +532,7 @@ sudo apt install pipx
 pipx ensurepath
 ```
 
-Puis, depuis le projet :
+Then, from the project:
 
 ```bash
 cd /path/to/drivesync
@@ -540,51 +540,51 @@ pipx install -e .
 drivesync --help
 ```
 
-## Comment tester
+## How to test
 
-Lancer les tests unitaires :
+Run the unit tests:
 
 ```bash
 cd /path/to/drivesync
 python3 -m unittest discover -s tests
 ```
 
-Resultat actuellement attendu :
+Currently expected result:
 
 ```text
 Ran 6 tests
 OK
 ```
 
-## Ou la configuration est stockee
+## Where configuration is stored
 
-Par defaut, DriveSync stocke sa configuration sous :
+By default, DriveSync stores its configuration under:
 
 ```text
 ~/.config/drivesync/
 ```
 
-Les fichiers concernes a ce stade sont :
+The files involved at this stage are:
 
 - `config.ini`
 - `directories.conf`
 
-## Variable utile pour les tests locaux
+## Useful variable for local tests
 
-Pour eviter d'ecrire dans ta vraie configuration utilisateur pendant des essais manuels, tu peux rediriger le dossier de config :
+To avoid writing to your real user configuration during manual tests, you can redirect the config folder:
 
 ```bash
 export DRIVESYNC_CONFIG_HOME=/tmp/drivesync-dev-config
 ```
 
-Puis lancer par exemple :
+Then run for example:
 
 ```bash
 PYTHONPATH=. python3 -m drivesync dir add documents ~/Documents
 PYTHONPATH=. python3 -m drivesync dir list
 ```
 
-## Exemple de premier test manuel
+## Example of first manual test
 
 ```bash
 cd /path/to/drivesync
@@ -596,7 +596,7 @@ PYTHONPATH=. python3 -m drivesync dir list --json
 PYTHONPATH=. python3 -m drivesync dir remove documents
 ```
 
-## Resume rapide
+## Quick summary
 
 - Python requis : 3.10 ou plus recent
 - Dependances Python applicatives : aucune
