@@ -128,6 +128,37 @@ class SyncStatusLogsTests(unittest.TestCase):
         self.assertEqual(payload["events"][0]["status"], "error")
         self.assertEqual(payload["events"][0]["raw_output"], "rclone error details")
 
+    def test_sync_logs_tail_json(self) -> None:
+        add_directory("docs", self.docs_dir)
+        for idx in range(1, 4):
+            append_sync_history_entry(
+                directory_id="docs",
+                code=0,
+                status="success",
+                local_directory=str(self.docs_dir),
+                remote_directory="gdrive:DriveSync/docs",
+                message=f"run{idx}",
+                resync=False,
+                force=False,
+                raw_output=f"raw {idx}",
+                trigger="manual",
+                scheduler=None,
+            )
+
+        with tempfile.TemporaryFile(mode="w+") as stdout:
+            from contextlib import redirect_stdout
+
+            with redirect_stdout(stdout):
+                exit_code = main(["sync", "logs", "docs", "--tail", "2", "--json"])
+
+            stdout.seek(0)
+            payload = json.load(stdout)
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(payload["count"], 2)
+        self.assertEqual(payload["events"][0]["message"], "run2")
+        self.assertEqual(payload["events"][1]["message"], "run3")
+
     def test_sync_logs_raw_text_output(self) -> None:
         add_directory("docs", self.docs_dir)
         append_sync_history_entry(
@@ -157,6 +188,48 @@ class SyncStatusLogsTests(unittest.TestCase):
         self.assertIn("[", output)
         self.assertIn("docs", output)
         self.assertIn("raw bisync lines", output)
+
+    def test_sync_logs_tail_raw_text_output(self) -> None:
+        add_directory("docs", self.docs_dir)
+        append_sync_history_entry(
+            directory_id="docs",
+            code=0,
+            status="success",
+            local_directory=str(self.docs_dir),
+            remote_directory="gdrive:DriveSync/docs",
+            message="run1",
+            resync=False,
+            force=False,
+            raw_output="raw-one",
+            trigger="manual",
+            scheduler=None,
+        )
+        append_sync_history_entry(
+            directory_id="docs",
+            code=0,
+            status="success",
+            local_directory=str(self.docs_dir),
+            remote_directory="gdrive:DriveSync/docs",
+            message="run2",
+            resync=False,
+            force=False,
+            raw_output="raw-two",
+            trigger="manual",
+            scheduler=None,
+        )
+
+        with tempfile.TemporaryFile(mode="w+") as stdout:
+            from contextlib import redirect_stdout
+
+            with redirect_stdout(stdout):
+                exit_code = main(["sync", "logs", "docs", "--raw", "--tail", "1"])
+
+            stdout.seek(0)
+            output = stdout.read()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("raw-two", output)
+        self.assertNotIn("raw-one", output)
 
     def test_sync_history_rotates_and_prunes_older_archives(self) -> None:
         add_directory("docs", self.docs_dir)

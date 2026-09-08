@@ -172,7 +172,7 @@ _drivesync() {
                 logs)
                     ids=("${(@f)$(_drivesync_ids)}")
                     if (( CURRENT >= 4 )); then
-                        compadd -- --json --path --raw
+                        compadd -- --json --path --raw --tail
                         if (( ${#ids} > 0 )); then
                             compadd -- $ids
                         fi

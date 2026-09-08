@@ -50,6 +50,8 @@ class ConfigCliTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertEqual(payload["config_dir"], str(self.config_dir.resolve()))
         self.assertTrue(payload["directories_file"].endswith("directories.conf"))
+        self.assertTrue(payload["sync_history_file"].endswith("sync-history.jsonl"))
+        self.assertTrue(payload["schedules_file"].endswith("schedules.json"))
 
     def test_config_path_set_and_reset(self) -> None:
         os.environ.pop("DRIVESYNC_CONFIG_HOME", None)

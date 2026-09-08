@@ -96,10 +96,10 @@ _drivesync() {
                     ;;
                 logs)
                     if [[ ${COMP_CWORD} -eq 3 ]]; then
-                        COMPREPLY=( $(compgen -W "$(_drivesync_ids) --json --path --raw" -- "$cur") )
+                        COMPREPLY=( $(compgen -W "$(_drivesync_ids) --json --path --raw --tail" -- "$cur") )
                         return 0
                     fi
-                    COMPREPLY=( $(compgen -W "--json --path --raw" -- "$cur") )
+                    COMPREPLY=( $(compgen -W "--json --path --raw --tail" -- "$cur") )
                     ;;
             esac
             ;;

@@ -13,6 +13,8 @@ from .config import (
     get_config_dir_source,
     get_config_file,
     get_directories_file,
+    get_schedules_file,
+    get_sync_history_file,
     load_app_config,
     normalize_logs_max_size_kb,
     normalize_logs_precision,
@@ -41,6 +43,13 @@ from .schedule import (
     uninstall_schedules,
 )
 from .sync_history import get_sync_history_path, load_sync_history
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise ValueError("tail must be a positive integer")
+    return parsed
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -112,6 +121,7 @@ def build_parser() -> argparse.ArgumentParser:
     logs_parser.add_argument("directory_id", nargs="?", default=None)
     logs_parser.add_argument("--path", action="store_true", dest="path_only")
     logs_parser.add_argument("--raw", action="store_true", dest="raw_output")
+    logs_parser.add_argument("--tail", type=_positive_int, dest="tail", default=None)
     logs_parser.add_argument("--json", action="store_true", dest="as_json")
 
     config_parser = subparsers.add_parser("config", help="Inspect DriveSync configuration paths")
@@ -531,6 +541,8 @@ def _print_config_path(as_json: bool, set_path: str | None, reset_path: bool) ->
     config_dir = get_config_dir()
     config_file = get_config_file()
     directories_file = get_directories_file()
+    sync_history_file = get_sync_history_file()
+    schedules_file = get_schedules_file()
     source = get_config_dir_source()
 
     if as_json:
@@ -538,6 +550,8 @@ def _print_config_path(as_json: bool, set_path: str | None, reset_path: bool) ->
             "config_dir": str(config_dir),
             "config_file": str(config_file),
             "directories_file": str(directories_file),
+            "sync_history_file": str(sync_history_file),
+            "schedules_file": str(schedules_file),
             "source": source,
         }
         print(json.dumps(payload, indent=2))
@@ -547,6 +561,8 @@ def _print_config_path(as_json: bool, set_path: str | None, reset_path: bool) ->
     print(f"config_dir={config_dir}")
     print(f"config_file={config_file}")
     print(f"directories_file={directories_file}")
+    print(f"sync_history_file={sync_history_file}")
+    print(f"schedules_file={schedules_file}")
     return 0
 
 
@@ -829,7 +845,13 @@ def _print_sync_status(directory_id: str | None, as_json: bool) -> int:
     return 0
 
 
-def _print_sync_logs(directory_id: str | None, path_only: bool, raw_output: bool, as_json: bool) -> int:
+def _print_sync_logs(
+    directory_id: str | None,
+    path_only: bool,
+    raw_output: bool,
+    tail: int | None,
+    as_json: bool,
+) -> int:
     managed_directories = load_directories()
     if directory_id is not None and not any(item.directory_id == directory_id for item in managed_directories):
         print(f"Unknown directory id: {directory_id}", file=sys.stderr)
@@ -839,6 +861,8 @@ def _print_sync_logs(directory_id: str | None, path_only: bool, raw_output: bool
     history = load_sync_history()
     if directory_id is not None:
         history = [entry for entry in history if entry.get("directory_id") == directory_id]
+    if tail is not None:
+        history = history[-tail:]
 
     if as_json:
         payload: dict[str, object] = {
@@ -903,7 +927,13 @@ def main(argv: list[str] | None = None) -> int:
                 return _print_sync_status(args.directory_id, args.as_json)
 
             if args.sync_command == "logs":
-                return _print_sync_logs(args.directory_id, args.path_only, args.raw_output, args.as_json)
+                return _print_sync_logs(
+                    args.directory_id,
+                    args.path_only,
+                    args.raw_output,
+                    args.tail,
+                    args.as_json,
+                )
 
             sync_parser = next(
                 action for action in parser._actions if isinstance(action, argparse._SubParsersAction)

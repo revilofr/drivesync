@@ -218,6 +218,8 @@ drivesync sync status --json
 drivesync sync logs
 drivesync sync logs documents --path
 drivesync sync logs documents --raw
+drivesync sync logs documents --tail 20
+drivesync sync logs documents --raw --tail 5
 drivesync sync logs --json
 drivesync schedule set documents --frequency hourly
 drivesync schedule set documents --frequency daily --at 22:30
@@ -255,6 +257,7 @@ drivesync auth status --json
 In text output, `sync status` also displays the last known synchronization date.
 `sync logs` displays the DriveSync log of executions from the local `sync-history.jsonl` file.
 `sync logs --raw` displays raw captured `rclone` output for debugging.
+`sync logs --tail N` limits output to the last N events.
 
 Scheduling:
 
