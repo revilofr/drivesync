@@ -232,6 +232,49 @@ class SyncStatusLogsTests(unittest.TestCase):
         self.assertIn("raw-two", output)
         self.assertNotIn("raw-one", output)
 
+    def test_sync_logs_raw_text_empty_outputs_show_single_guidance(self) -> None:
+        add_directory("docs", self.docs_dir)
+        append_sync_history_entry(
+            directory_id="docs",
+            code=0,
+            status="success",
+            local_directory=str(self.docs_dir),
+            remote_directory="gdrive:DriveSync/docs",
+            message="run1",
+            resync=False,
+            force=False,
+            raw_output="",
+            trigger="manual",
+            scheduler=None,
+        )
+        append_sync_history_entry(
+            directory_id="docs",
+            code=0,
+            status="success",
+            local_directory=str(self.docs_dir),
+            remote_directory="gdrive:DriveSync/docs",
+            message="run2",
+            resync=False,
+            force=False,
+            raw_output="",
+            trigger="manual",
+            scheduler=None,
+        )
+
+        with tempfile.TemporaryFile(mode="w+") as stdout:
+            from contextlib import redirect_stdout
+
+            with redirect_stdout(stdout):
+                exit_code = main(["sync", "logs", "docs", "--raw", "--tail", "10"])
+
+            stdout.seek(0)
+            output = stdout.read()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Aucun log brut capture", output)
+        self.assertEqual(output.count("Aucun log brut capture"), 1)
+        self.assertNotIn("<raw output unavailable>", output)
+
     def test_sync_logs_tail_follow_text_output(self) -> None:
         add_directory("docs", self.docs_dir)
         first = {
@@ -271,6 +314,46 @@ class SyncStatusLogsTests(unittest.TestCase):
         self.assertIn("run2", output)
         self.assertIn("run3", output)
         self.assertNotIn("run1", output)
+
+    def test_sync_logs_tail_follow_raw_empty_outputs_show_single_guidance(self) -> None:
+        add_directory("docs", self.docs_dir)
+        first = {
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "directory_id": "docs",
+            "status": "success",
+            "message": "run1",
+            "raw_output": "",
+        }
+        second = {
+            "timestamp": "2026-01-01T00:01:00+00:00",
+            "directory_id": "docs",
+            "status": "success",
+            "message": "run2",
+            "raw_output": "",
+        }
+        third = {
+            "timestamp": "2026-01-01T00:02:00+00:00",
+            "directory_id": "docs",
+            "status": "success",
+            "message": "run3",
+            "raw_output": "",
+        }
+
+        with patch("drivesync.cli.load_sync_history", side_effect=[[first, second], [first, second, third]]):
+            with patch("drivesync.cli.time.sleep", side_effect=KeyboardInterrupt):
+                with tempfile.TemporaryFile(mode="w+") as stdout:
+                    from contextlib import redirect_stdout
+
+                    with redirect_stdout(stdout):
+                        exit_code = main(["sync", "logs", "docs", "--raw", "--tail", "2", "--follow"])
+
+                    stdout.seek(0)
+                    output = stdout.read()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Aucun log brut capture", output)
+        self.assertEqual(output.count("Aucun log brut capture"), 1)
+        self.assertNotIn("<raw output unavailable>", output)
 
     def test_sync_logs_follow_requires_tail(self) -> None:
         add_directory("docs", self.docs_dir)

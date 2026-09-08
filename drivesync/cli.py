@@ -890,23 +890,41 @@ def _print_sync_logs(
         return 0
 
     if raw_output:
+        logs_precision = load_app_config().logs_precision
+
+        def _print_no_raw_message() -> None:
+            print(
+                "0|empty|Aucun log brut capture "
+                f"(precision actuelle: {logs_precision}; utilisez 'drivesync config logs precision set full')."
+            )
+
         if not history:
             if not follow:
-                print("0|empty|Aucun log brut de synchronisation")
+                _print_no_raw_message()
                 return 0
 
+        printed_any = False
         for entry in reversed(history):
             timestamp = entry.get("timestamp")
             entry_id = entry.get("directory_id")
-            output = entry.get("raw_output") or "<raw output unavailable>"
+            output = str(entry.get("raw_output") or "").strip()
+            if not output:
+                continue
+            printed_any = True
             print(f"[{timestamp}] {entry_id}")
             print(output)
+        if not follow and not printed_any:
+            _print_no_raw_message()
+            return 0
         if not follow:
             return 0
 
         known_entries = {
             json.dumps(entry, sort_keys=True, ensure_ascii=True) for entry in full_history
         }
+
+        if not printed_any:
+            _print_no_raw_message()
 
         try:
             while True:
@@ -923,7 +941,9 @@ def _print_sync_logs(
                     known_entries.add(key)
                     timestamp = entry.get("timestamp")
                     entry_id = entry.get("directory_id")
-                    output = entry.get("raw_output") or "<raw output unavailable>"
+                    output = str(entry.get("raw_output") or "").strip()
+                    if not output:
+                        continue
                     print(f"[{timestamp}] {entry_id}")
                     print(output)
 
