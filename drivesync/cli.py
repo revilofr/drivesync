@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import time
 
 from .auth import get_auth_status, setup_auth
 from .config import (
@@ -122,6 +123,7 @@ def build_parser() -> argparse.ArgumentParser:
     logs_parser.add_argument("--path", action="store_true", dest="path_only")
     logs_parser.add_argument("--raw", action="store_true", dest="raw_output")
     logs_parser.add_argument("--tail", type=_positive_int, dest="tail", default=None)
+    logs_parser.add_argument("--follow", "-f", action="store_true", dest="follow")
     logs_parser.add_argument("--json", action="store_true", dest="as_json")
 
     config_parser = subparsers.add_parser("config", help="Inspect DriveSync configuration paths")
@@ -850,8 +852,16 @@ def _print_sync_logs(
     path_only: bool,
     raw_output: bool,
     tail: int | None,
+    follow: bool,
     as_json: bool,
 ) -> int:
+    if follow and tail is None:
+        raise ValueError("--follow requires --tail")
+    if follow and as_json:
+        raise ValueError("--follow is not supported with --json")
+    if follow and path_only:
+        raise ValueError("--follow cannot be used with --path")
+
     managed_directories = load_directories()
     if directory_id is not None and not any(item.directory_id == directory_id for item in managed_directories):
         print(f"Unknown directory id: {directory_id}", file=sys.stderr)
@@ -861,6 +871,7 @@ def _print_sync_logs(
     history = load_sync_history()
     if directory_id is not None:
         history = [entry for entry in history if entry.get("directory_id") == directory_id]
+    full_history = history
     if tail is not None:
         history = history[-tail:]
 
@@ -880,8 +891,9 @@ def _print_sync_logs(
 
     if raw_output:
         if not history:
-            print("0|empty|Aucun log brut de synchronisation")
-            return 0
+            if not follow:
+                print("0|empty|Aucun log brut de synchronisation")
+                return 0
 
         for entry in reversed(history):
             timestamp = entry.get("timestamp")
@@ -889,11 +901,40 @@ def _print_sync_logs(
             output = entry.get("raw_output") or "<raw output unavailable>"
             print(f"[{timestamp}] {entry_id}")
             print(output)
-        return 0
+        if not follow:
+            return 0
+
+        known_entries = {
+            json.dumps(entry, sort_keys=True, ensure_ascii=True) for entry in full_history
+        }
+
+        try:
+            while True:
+                current_history = load_sync_history()
+                if directory_id is not None:
+                    current_history = [
+                        entry for entry in current_history if entry.get("directory_id") == directory_id
+                    ]
+
+                for entry in current_history:
+                    key = json.dumps(entry, sort_keys=True, ensure_ascii=True)
+                    if key in known_entries:
+                        continue
+                    known_entries.add(key)
+                    timestamp = entry.get("timestamp")
+                    entry_id = entry.get("directory_id")
+                    output = entry.get("raw_output") or "<raw output unavailable>"
+                    print(f"[{timestamp}] {entry_id}")
+                    print(output)
+
+                time.sleep(1)
+        except KeyboardInterrupt:
+            return 0
 
     if not history:
-        print("0|empty|Aucun log de synchronisation")
-        return 0
+        if not follow:
+            print("0|empty|Aucun log de synchronisation")
+            return 0
 
     for entry in reversed(history):
         timestamp = entry.get("timestamp")
@@ -901,7 +942,33 @@ def _print_sync_logs(
         status = entry.get("status")
         message = entry.get("message")
         print(f"{timestamp}|{entry_id}|{status}|{message}")
-    return 0
+    if not follow:
+        return 0
+
+    known_entries = {
+        json.dumps(entry, sort_keys=True, ensure_ascii=True) for entry in full_history
+    }
+
+    try:
+        while True:
+            current_history = load_sync_history()
+            if directory_id is not None:
+                current_history = [entry for entry in current_history if entry.get("directory_id") == directory_id]
+
+            for entry in current_history:
+                key = json.dumps(entry, sort_keys=True, ensure_ascii=True)
+                if key in known_entries:
+                    continue
+                known_entries.add(key)
+                timestamp = entry.get("timestamp")
+                entry_id = entry.get("directory_id")
+                status = entry.get("status")
+                message = entry.get("message")
+                print(f"{timestamp}|{entry_id}|{status}|{message}")
+
+            time.sleep(1)
+    except KeyboardInterrupt:
+        return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -932,6 +999,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.path_only,
                     args.raw_output,
                     args.tail,
+                    args.follow,
                     args.as_json,
                 )
 

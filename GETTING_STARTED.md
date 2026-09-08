@@ -391,6 +391,7 @@ PYTHONPATH=. python3 -m drivesync sync logs
 PYTHONPATH=. python3 -m drivesync sync logs --json
 PYTHONPATH=. python3 -m drivesync sync logs documents --path
 PYTHONPATH=. python3 -m drivesync sync logs documents --tail 20
+PYTHONPATH=. python3 -m drivesync sync logs documents --tail 20 --follow
 PYTHONPATH=. python3 -m drivesync sync logs documents --raw --tail 5
 PYTHONPATH=. python3 -m drivesync schedule set documents --frequency 5minutes
 PYTHONPATH=. python3 -m drivesync schedule preview

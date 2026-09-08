@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from drivesync.cli import main
 from drivesync.directories import add_directory
@@ -230,6 +231,60 @@ class SyncStatusLogsTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn("raw-two", output)
         self.assertNotIn("raw-one", output)
+
+    def test_sync_logs_tail_follow_text_output(self) -> None:
+        add_directory("docs", self.docs_dir)
+        first = {
+            "timestamp": "2026-01-01T00:00:00+00:00",
+            "directory_id": "docs",
+            "status": "success",
+            "message": "run1",
+            "raw_output": "raw-one",
+        }
+        second = {
+            "timestamp": "2026-01-01T00:01:00+00:00",
+            "directory_id": "docs",
+            "status": "success",
+            "message": "run2",
+            "raw_output": "raw-two",
+        }
+        third = {
+            "timestamp": "2026-01-01T00:02:00+00:00",
+            "directory_id": "docs",
+            "status": "success",
+            "message": "run3",
+            "raw_output": "raw-three",
+        }
+
+        with patch("drivesync.cli.load_sync_history", side_effect=[[first, second], [first, second, third]]):
+            with patch("drivesync.cli.time.sleep", side_effect=KeyboardInterrupt):
+                with tempfile.TemporaryFile(mode="w+") as stdout:
+                    from contextlib import redirect_stdout
+
+                    with redirect_stdout(stdout):
+                        exit_code = main(["sync", "logs", "docs", "--tail", "1", "--follow"])
+
+                    stdout.seek(0)
+                    output = stdout.read()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("run2", output)
+        self.assertIn("run3", output)
+        self.assertNotIn("run1", output)
+
+    def test_sync_logs_follow_requires_tail(self) -> None:
+        add_directory("docs", self.docs_dir)
+        with tempfile.TemporaryFile(mode="w+") as stderr:
+            from contextlib import redirect_stderr
+
+            with redirect_stderr(stderr):
+                exit_code = main(["sync", "logs", "docs", "--follow"])
+
+            stderr.seek(0)
+            error = stderr.read()
+
+        self.assertEqual(exit_code, 2)
+        self.assertIn("--follow requires --tail", error)
 
     def test_sync_history_rotates_and_prunes_older_archives(self) -> None:
         add_directory("docs", self.docs_dir)
