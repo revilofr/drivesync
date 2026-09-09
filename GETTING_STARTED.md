@@ -405,23 +405,22 @@ PYTHONPATH=. python3 -m drivesync config logs max-size show --json
 PYTHONPATH=. python3 -m drivesync config logs max-size set 10
 ```
 
-Pour afficher le statut dans Executor sous GNOME, ajoutez cette commande dans la
-zone de statut avec un intervalle de 60 secondes :
+To display the synchronization status in GNOME Executor, add this command to the
+status area and set its interval to 60 seconds:
 
 ```text
 /home/olivier/scripts/drivesync/.venv/bin/drivesync status --executor
 ```
 
-Exemple de rendu dans la barre :
+Example output in the system bar:
 
 ```text
  ☁️ 🟢
 ```
 
-Le rendu devient `☁️ 🟠` en cas de retard ou d'incertitude, `☁️ 🔴` après une
-erreur réelle de synchronisation et `☁️ ⚪` lorsque le remote est hors ligne.
-Adaptez le chemin à votre installation si DriveSync n'est pas installé dans ce
-répertoire.
+The indicator becomes `☁️ 🟠` for a late or uncertain state, `☁️ 🔴` after a
+real synchronization failure, and `☁️ ⚪` when the remote is unavailable.
+Adjust the path if DriveSync is not installed in this directory.
 
 Important for scheduling:
 

@@ -261,35 +261,46 @@ drivesync auth status --json
 ```
 
 `sync status` displays the last known state by directory (or `never_run`).
+
 In text output, `sync status` also displays the last known synchronization date.
+
 `status` displays the health of every managed directory using its configured schedule
 and the local synchronization history. It tolerates up to two schedule intervals to
 avoid reporting a timer that is only slightly late as an error.
+
 `status --json` exposes the global state and, for each directory, the schedule interval,
 last attempt, last successful synchronization, result, and reason.
-`status --executor` prints only one compact indicator: `☁️ 🟢` when everything is healthy,
-`☁️ 🟠` when a directory is late or uncertain, `☁️ 🔴` after a real synchronization
-failure, and `☁️ ⚪` when the configured remote is unavailable.
 
-### Exemple avec Executor sous GNOME
+`status --executor` prints one compact indicator for the GNOME Executor extension:
 
-Dans Executor, ajoutez une commande active dans la zone de statut, avec un intervalle
-de 60 secondes :
+- `☁️ 🟢` when everything is healthy;
+- `☁️ 🟠` when a directory is late or its state is uncertain;
+- `☁️ 🔴` after a real synchronization failure;
+- `☁️ ⚪` when the configured remote is unavailable.
+
+### Example with GNOME Executor
+
+In Executor, add an active command to the status area and set its interval to
+60 seconds:
 
 ```text
 /home/olivier/scripts/drivesync/.venv/bin/drivesync status --executor
 ```
 
-Le résultat apparaît directement dans la barre GNOME :
+The result appears directly in the GNOME system bar:
 
 ```text
  ☁️ 🟢
 ```
 
-Selon la situation, l'indicateur devient `☁️ 🟠` (retard ou état incertain),
-`☁️ 🔴` (échec réel) ou `☁️ ⚪` (remote indisponible). Le chemin dépend de
-l'installation ; utilisez `command -v drivesync` dans un terminal pour retrouver
-celui à renseigner dans Executor.
+Depending on the situation, the indicator changes to:
+
+- `☁️ 🟠` for a late or uncertain state;
+- `☁️ 🔴` after a real synchronization failure;
+- `☁️ ⚪` when the remote is unavailable.
+
+The path depends on your installation. Run `command -v drivesync` in a terminal
+to find the path to use in Executor.
 
 `sync logs` displays the DriveSync log of executions from the local `sync-history.jsonl` file.
 `sync logs --raw` displays raw captured `rclone` output for debugging.
