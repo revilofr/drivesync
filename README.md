@@ -123,58 +123,9 @@ echo "source /path/to/drivesync/completion.zsh" >> ~/.zshrc
 source ~/.zshrc
 ```
 
-## Tests
-
-Run the test suite:
-
-```bash
-python3 -m unittest discover -s tests
-```
-
-## Prerequisites
-
-- Linux
-- Python 3.10 or later
-- no external Python applicative dependencies for the current MVP
-- `rclone` is required for `auth`, `sync check`, and `sync run`, but not for `dir add/remove/list/show`
-- `cron` is required for `schedule install` and `schedule uninstall`
-
-## Dependencies
-
-Runtime dependencies (current state):
-
-- Python 3.10+
-- Python standard library only
-
-Tool dependencies (development / local installation):
-
-- `pip`
-- `setuptools`
-
-System dependencies:
-
-- Linux
-- `rclone` (required for `auth`, `sync check`, and `sync run`)
-- `cron` (required for `schedule install` and `schedule uninstall`)
-- `rsync` is not a dependency
-
-Recommended `rclone` version for DriveSync:
-
-- reasonable minimum: `>= 1.66`
-- recommended: `>= 1.71`
-- ideally: a recent stable version
-
-Check if `rclone` is installed:
-
-```bash
-command -v rclone
-```
-
-Also verify its version:
-
-```bash
-rclone version
-```
+For a concrete, end-to-end usage example (authentication, watching a
+folder, scheduling, status), see the [End-to-end walkthrough](#end-to-end-walkthrough)
+below.
 
 ## End-to-end walkthrough
 
@@ -251,6 +202,59 @@ hardware/status scripts the same way, check out
 [revilofr-executors](https://github.com/revilofr/revilofr-executors), a
 companion collection of small Executor scripts (battery levels, etc.) by
 the same author.
+
+## Tests
+
+Run the test suite:
+
+```bash
+python3 -m unittest discover -s tests
+```
+
+## Prerequisites
+
+- Linux
+- Python 3.10 or later
+- no external Python applicative dependencies for the current MVP
+- `rclone` is required for `auth`, `sync check`, and `sync run`, but not for `dir add/remove/list/show`
+- `cron` is required for `schedule install` and `schedule uninstall`
+
+## Dependencies
+
+Runtime dependencies (current state):
+
+- Python 3.10+
+- Python standard library only
+
+Tool dependencies (development / local installation):
+
+- `pip`
+- `setuptools`
+
+System dependencies:
+
+- Linux
+- `rclone` (required for `auth`, `sync check`, and `sync run`)
+- `cron` (required for `schedule install` and `schedule uninstall`)
+- `rsync` is not a dependency
+
+Recommended `rclone` version for DriveSync:
+
+- reasonable minimum: `>= 1.66`
+- recommended: `>= 1.71`
+- ideally: a recent stable version
+
+Check if `rclone` is installed:
+
+```bash
+command -v rclone
+```
+
+Also verify its version:
+
+```bash
+rclone version
+```
 
 ## Documentation
 
