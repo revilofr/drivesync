@@ -44,6 +44,17 @@ from .schedule import (
     uninstall_schedules,
 )
 from .sync_history import get_sync_history_path, load_sync_history
+from .status import (
+    DirectoryHealth,
+    STATUS_ERROR,
+    STATUS_LATE,
+    STATUS_OFFLINE,
+    STATUS_OK,
+    STATUS_UNKNOWN,
+    evaluate_directory_health,
+)
+
+DEFAULT_FOLLOW_TAIL = 10
 
 
 def _positive_int(value: str) -> int:
@@ -59,6 +70,13 @@ def build_parser() -> argparse.ArgumentParser:
         description="Pattern: drivesync <sujet> <action>",
     )
     subparsers = parser.add_subparsers(dest="command")
+
+    status_command_parser = subparsers.add_parser(
+        "status", help="Show compact or detailed synchronization status"
+    )
+    status_command_parser.add_argument("directory_id", nargs="?", default=None)
+    status_command_parser.add_argument("--executor", action="store_true", dest="executor")
+    status_command_parser.add_argument("--json", action="store_true", dest="as_json")
 
     dir_parser = subparsers.add_parser("dir", help="Manage synchronized directories")
     dir_subparsers = dir_parser.add_subparsers(dest="dir_command")
@@ -116,6 +134,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     status_parser = sync_subparsers.add_parser("status", help="Show synchronization status")
     status_parser.add_argument("directory_id", nargs="?", default=None)
+    status_parser.add_argument("--executor", action="store_true", dest="executor")
     status_parser.add_argument("--json", action="store_true", dest="as_json")
 
     logs_parser = sync_subparsers.add_parser("logs", help="Inspect synchronization logs")
@@ -847,6 +866,75 @@ def _print_sync_status(directory_id: str | None, as_json: bool) -> int:
     return 0
 
 
+def _health_statuses(directory_id: str | None) -> list[DirectoryHealth] | None:
+    managed_directories = load_directories()
+    if directory_id is not None:
+        managed_directories = [item for item in managed_directories if item.directory_id == directory_id]
+        if not managed_directories:
+            print(f"Unknown directory id: {directory_id}", file=sys.stderr)
+            return None
+
+    schedules = {schedule.directory_id: schedule for schedule in load_schedules()}
+    history = load_sync_history()
+    offline = bool(managed_directories) and get_auth_status().code != 0
+    return [
+        evaluate_directory_health(item, schedules.get(item.directory_id), history, offline=offline)
+        for item in managed_directories
+    ]
+
+
+def _global_health_state(statuses: list[DirectoryHealth]) -> str:
+    state_names = {status.state for status in statuses}
+    if STATUS_ERROR in state_names:
+        return STATUS_ERROR
+    if STATUS_OFFLINE in state_names:
+        return STATUS_OFFLINE
+    if STATUS_LATE in state_names or STATUS_UNKNOWN in state_names:
+        return STATUS_LATE
+    return STATUS_OK
+
+
+def _print_health_status(
+    directory_id: str | None,
+    as_json: bool,
+    executor: bool,
+) -> int:
+    statuses = _health_statuses(directory_id)
+    if statuses is None:
+        return 2
+
+    global_state = _global_health_state(statuses)
+    if executor:
+        symbol = {
+            STATUS_OK: "🟢",
+            STATUS_ERROR: "🔴",
+            STATUS_LATE: "🟠",
+            STATUS_OFFLINE: "⚪",
+        }[global_state]
+        print(f" ☁️ {symbol} ")
+        return 0
+
+    if as_json:
+        print(json.dumps({
+            "status": global_state,
+            "executor": f"☁️ {'🟢' if global_state == STATUS_OK else '🔴' if global_state == STATUS_ERROR else '⚪' if global_state == STATUS_OFFLINE else '🟠'}",
+            "directories": [status.to_dict() for status in statuses],
+        }, indent=2))
+        return 0
+
+    labels = {
+        STATUS_OK: "OK",
+        STATUS_ERROR: "ERREUR",
+        STATUS_LATE: "EN RETARD",
+        STATUS_UNKNOWN: "INCONNU",
+        STATUS_OFFLINE: "HORS LIGNE",
+    }
+    print(f"Statut global : {labels[global_state]}")
+    for status in statuses:
+        print(f"- {status.directory_id}: {labels[status.state]} ({status.reason})")
+    return 0
+
+
 def _print_sync_logs(
     directory_id: str | None,
     path_only: bool,
@@ -856,7 +944,7 @@ def _print_sync_logs(
     as_json: bool,
 ) -> int:
     if follow and tail is None:
-        raise ValueError("--follow requires --tail")
+        tail = DEFAULT_FOLLOW_TAIL
     if follow and as_json:
         raise ValueError("--follow is not supported with --json")
     if follow and path_only:
@@ -996,6 +1084,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
+        if args.command == "status":
+            return _print_health_status(args.directory_id, args.as_json, args.executor)
+
         if args.command == "sync":
             if args.sync_command == "check":
                 return _print_check(args.as_json)
@@ -1011,6 +1102,8 @@ def main(argv: list[str] | None = None) -> int:
                 )
 
             if args.sync_command == "status":
+                if args.executor:
+                    return _print_health_status(args.directory_id, False, True)
                 return _print_sync_status(args.directory_id, args.as_json)
 
             if args.sync_command == "logs":

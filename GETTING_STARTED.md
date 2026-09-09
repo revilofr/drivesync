@@ -37,6 +37,7 @@ The project is under construction.
 
 - `sync run` executions are logged in `sync-history.jsonl`
 - `sync status` reads the last known state by id and also displays the last known date in text output
+- `status --executor` prints one compact health indicator for Executor under GNOME
 - `sync logs` displays the DriveSync journal
 - `sync logs --raw` displays the raw captured output of `rclone`
 - `config logs precision show|set` controls the verbosity level captured for next runs
@@ -387,6 +388,7 @@ PYTHONPATH=. python3 -m drivesync sync run documents --resync --force
 PYTHONPATH=. python3 -m drivesync sync run --json
 PYTHONPATH=. python3 -m drivesync sync status
 PYTHONPATH=. python3 -m drivesync sync status --json
+PYTHONPATH=. python3 -m drivesync status --executor
 PYTHONPATH=. python3 -m drivesync sync logs
 PYTHONPATH=. python3 -m drivesync sync logs --json
 PYTHONPATH=. python3 -m drivesync sync logs documents --path
@@ -402,6 +404,24 @@ PYTHONPATH=. python3 -m drivesync config logs max-size show
 PYTHONPATH=. python3 -m drivesync config logs max-size show --json
 PYTHONPATH=. python3 -m drivesync config logs max-size set 10
 ```
+
+Pour afficher le statut dans Executor sous GNOME, ajoutez cette commande dans la
+zone de statut avec un intervalle de 60 secondes :
+
+```text
+/home/olivier/scripts/drivesync/.venv/bin/drivesync status --executor
+```
+
+Exemple de rendu dans la barre :
+
+```text
+ ☁️ 🟢
+```
+
+Le rendu devient `☁️ 🟠` en cas de retard ou d'incertitude, `☁️ 🔴` après une
+erreur réelle de synchronisation et `☁️ ⚪` lorsque le remote est hors ligne.
+Adaptez le chemin à votre installation si DriveSync n'est pas installé dans ce
+répertoire.
 
 Important for scheduling:
 

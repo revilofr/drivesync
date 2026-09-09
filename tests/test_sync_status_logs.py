@@ -355,19 +355,34 @@ class SyncStatusLogsTests(unittest.TestCase):
         self.assertEqual(output.count("Aucun log brut capture"), 1)
         self.assertNotIn("<raw output unavailable>", output)
 
-    def test_sync_logs_follow_requires_tail(self) -> None:
+    def test_sync_logs_follow_defaults_to_last_ten_events(self) -> None:
         add_directory("docs", self.docs_dir)
-        with tempfile.TemporaryFile(mode="w+") as stderr:
-            from contextlib import redirect_stderr
+        history = [
+            {
+                "timestamp": f"2026-01-01T00:{index:02d}:00+00:00",
+                "directory_id": "docs",
+                "status": "success",
+                "message": f"run{index}",
+                "raw_output": "",
+            }
+            for index in range(12)
+        ]
 
-            with redirect_stderr(stderr):
-                exit_code = main(["sync", "logs", "docs", "--follow"])
+        with patch("drivesync.cli.load_sync_history", return_value=history):
+            with patch("drivesync.cli.time.sleep", side_effect=KeyboardInterrupt):
+                with tempfile.TemporaryFile(mode="w+") as stdout:
+                    from contextlib import redirect_stdout
 
-            stderr.seek(0)
-            error = stderr.read()
+                    with redirect_stdout(stdout):
+                        exit_code = main(["sync", "logs", "--follow", "docs"])
 
-        self.assertEqual(exit_code, 2)
-        self.assertIn("--follow requires --tail", error)
+                    stdout.seek(0)
+                    output = stdout.read()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("run11", output)
+        self.assertIn("run2", output)
+        self.assertNotIn("|docs|success|run1\n", output)
 
     def test_sync_history_rotates_and_prunes_older_archives(self) -> None:
         add_directory("docs", self.docs_dir)

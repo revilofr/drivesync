@@ -13,16 +13,31 @@ for item in payload:
 '
 }
 
+_drivesync_directory_specs() {
+    drivesync dir list --json 2>/dev/null | python3 -c 'import json,sys
+try:
+    payload=json.load(sys.stdin)
+except Exception:
+    payload=[]
+for item in payload:
+    value=item.get("id")
+    directory=item.get("directory")
+    if isinstance(value,str) and isinstance(directory,str):
+        print(f"{value}:{directory}")
+'
+}
+
 _drivesync_remotes() {
     rclone listremotes 2>/dev/null | sed 's/:$//'
 }
 
 _drivesync() {
-    local -a top_commands dir_actions sync_actions config_actions config_path_actions config_root_actions config_logs_actions config_logs_precision_actions config_logs_max_size_actions auth_actions schedule_actions ids remotes
+    local -a top_commands dir_actions sync_actions config_actions config_path_actions config_root_actions config_logs_actions config_logs_precision_actions config_logs_max_size_actions auth_actions schedule_actions ids directory_specs remotes
 
     top_commands=(
         'dir:Manage synchronized directories'
         'sync:Synchronization commands'
+        'status:Show synchronization health'
         'config:Configuration path commands'
         'auth:Manage rclone authentication'
         'schedule:Manage scheduled synchronizations'
@@ -162,7 +177,7 @@ _drivesync() {
                 status)
                     ids=("${(@f)$(_drivesync_ids)}")
                     if (( CURRENT >= 4 )); then
-                        compadd -- --json
+                        compadd -- --json --executor
                         if (( ${#ids} > 0 )); then
                             compadd -- $ids
                         fi
@@ -170,16 +185,54 @@ _drivesync() {
                     fi
                     ;;
                 logs)
-                    ids=("${(@f)$(_drivesync_ids)}")
+                    directory_specs=("${(@f)$(_drivesync_directory_specs)}")
+                    if [[ "${words[CURRENT-1]}" == "--tail" ]]; then
+                        compadd -- 1 5 10 20 50 100
+                        return
+                    fi
                     if (( CURRENT >= 4 )); then
-                        compadd -- --json --path --raw --tail --follow -f
-                        if (( ${#ids} > 0 )); then
-                            compadd -- $ids
+                        local -a logs_options
+                        local log_word
+                        local logs_follow_seen=0
+                        local logs_path_seen=0
+                        local logs_json_seen=0
+                        for log_word in "${words[@]}"; do
+                            case "$log_word" in
+                                --follow|-f) logs_follow_seen=1 ;;
+                                --path) logs_path_seen=1 ;;
+                                --json) logs_json_seen=1 ;;
+                            esac
+                        done
+                        logs_options=(--json --path --raw --tail --follow -f)
+                        if (( logs_follow_seen )); then
+                            logs_options=(${logs_options:#--json})
+                            logs_options=(${logs_options:#--path})
+                        fi
+                        if (( logs_json_seen || logs_path_seen )); then
+                            logs_options=(${logs_options:#--follow})
+                            logs_options=(${logs_options:#-f})
+                        fi
+                        compadd -- $logs_options
+                        if (( ${#directory_specs} > 0 )); then
+                            compadd -- $directory_specs
                         fi
                         return
                     fi
                     ;;
             esac
+            ;;
+
+        status)
+            ids=("${(@f)$(_drivesync_ids)}")
+            if (( CURRENT == 3 )); then
+                compadd -- --json --executor
+                if (( ${#ids} > 0 )); then
+                    compadd -- $ids
+                fi
+                return
+            fi
+            _arguments '--json[Output as JSON]' '--executor[Print compact Executor status]'
+            return
             ;;
 
         config)
@@ -282,7 +335,7 @@ _drivesync() {
 
             case "${words[3]}" in
                 status)
-                    _arguments '--json[Output as JSON]'
+                    _arguments '--json[Output as JSON]' '--executor[Print compact Executor status]'
                     return
                     ;;
                 setup)
@@ -298,6 +351,19 @@ _drivesync() {
                     return
                     ;;
             esac
+            ;;
+
+        status)
+            ids=("${(@f)$(_drivesync_ids)}")
+            if (( CURRENT == 3 )); then
+                compadd -- --json --executor
+                if (( ${#ids} > 0 )); then
+                    compadd -- $ids
+                fi
+                return
+            fi
+            _arguments '--json[Output as JSON]' '--executor[Print compact Executor status]'
+            return
             ;;
         schedule)
             if (( CURRENT == 3 )); then

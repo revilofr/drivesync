@@ -16,6 +16,7 @@ DriveSync provides a simple layer above `rclone` to manage these synchronization
 - simplified launch of synchronizations ;
 - automation and scheduling ;
 - checking statuses, histories, and logs ;
+- optional GNOME Executor integration to display synchronization health directly in the system bar ;
 - safeguards for sensitive operations like `bisync --resync` ;
 - centralized management of multiple synchronizations.
 
@@ -215,11 +216,16 @@ drivesync sync run --json
 drivesync sync status
 drivesync sync status documents
 drivesync sync status --json
+drivesync status
+drivesync status --json
+drivesync status --executor
+drivesync status documents --executor
 drivesync sync logs
 drivesync sync logs documents --path
 drivesync sync logs documents --raw
 drivesync sync logs documents --tail 20
 drivesync sync logs documents --tail 20 --follow
+drivesync sync logs --follow documents
 drivesync sync logs documents --raw --tail 5
 drivesync sync logs --json
 drivesync schedule set documents --frequency hourly
@@ -256,10 +262,40 @@ drivesync auth status --json
 
 `sync status` displays the last known state by directory (or `never_run`).
 In text output, `sync status` also displays the last known synchronization date.
+`status` displays the health of every managed directory using its configured schedule
+and the local synchronization history. It tolerates up to two schedule intervals to
+avoid reporting a timer that is only slightly late as an error.
+`status --json` exposes the global state and, for each directory, the schedule interval,
+last attempt, last successful synchronization, result, and reason.
+`status --executor` prints only one compact indicator: `☁️ 🟢` when everything is healthy,
+`☁️ 🟠` when a directory is late or uncertain, `☁️ 🔴` after a real synchronization
+failure, and `☁️ ⚪` when the configured remote is unavailable.
+
+### Exemple avec Executor sous GNOME
+
+Dans Executor, ajoutez une commande active dans la zone de statut, avec un intervalle
+de 60 secondes :
+
+```text
+/home/olivier/scripts/drivesync/.venv/bin/drivesync status --executor
+```
+
+Le résultat apparaît directement dans la barre GNOME :
+
+```text
+ ☁️ 🟢
+```
+
+Selon la situation, l'indicateur devient `☁️ 🟠` (retard ou état incertain),
+`☁️ 🔴` (échec réel) ou `☁️ ⚪` (remote indisponible). Le chemin dépend de
+l'installation ; utilisez `command -v drivesync` dans un terminal pour retrouver
+celui à renseigner dans Executor.
+
 `sync logs` displays the DriveSync log of executions from the local `sync-history.jsonl` file.
 `sync logs --raw` displays raw captured `rclone` output for debugging.
 `sync logs --tail N` limits output to the last N events.
 `sync logs --tail N --follow` keeps streaming new events until interrupted.
+`sync logs --follow` starts with the last 10 events and keeps streaming new events; use `--tail N` to change the initial window.
 
 Scheduling:
 

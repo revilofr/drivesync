@@ -13,6 +13,10 @@ for item in payload:
 '
 }
 
+_drivesync_tail_values() {
+    compgen -W "1 5 10 20 50 100" -- "$1"
+}
+
 _drivesync_remotes() {
     rclone listremotes 2>/dev/null | sed 's/:$//'
 }
@@ -28,7 +32,7 @@ _drivesync() {
     sub3="${COMP_WORDS[4]}"
 
     if [[ ${COMP_CWORD} -eq 1 ]]; then
-        COMPREPLY=( $(compgen -W "dir sync config auth schedule -h --help" -- "$cur") )
+        COMPREPLY=( $(compgen -W "dir sync status config auth schedule -h --help" -- "$cur") )
         return 0
     fi
 
@@ -89,19 +93,74 @@ _drivesync() {
                     ;;
                 status)
                     if [[ ${COMP_CWORD} -eq 3 ]]; then
-                        COMPREPLY=( $(compgen -W "$(_drivesync_ids) --json" -- "$cur") )
+                        COMPREPLY=( $(compgen -W "$(_drivesync_ids) --json --executor" -- "$cur") )
                         return 0
                     fi
-                    COMPREPLY=( $(compgen -W "--json" -- "$cur") )
+                    COMPREPLY=( $(compgen -W "--json --executor" -- "$cur") )
                     ;;
                 logs)
-                    if [[ ${COMP_CWORD} -eq 3 ]]; then
-                        COMPREPLY=( $(compgen -W "$(_drivesync_ids) --json --path --raw --tail --follow -f" -- "$cur") )
+                    if [[ "$prev" == "--tail" ]]; then
+                        COMPREPLY=( $(_drivesync_tail_values "$cur") )
                         return 0
                     fi
-                    COMPREPLY=( $(compgen -W "--json --path --raw --tail --follow -f" -- "$cur") )
+
+                    local logs_id_seen=0
+                    local logs_follow_seen=0
+                    local logs_path_seen=0
+                    local logs_json_seen=0
+                    local skip_next=0
+                    local index
+                    for ((index = 3; index < COMP_CWORD; index++)); do
+                        if (( skip_next )); then
+                            skip_next=0
+                            continue
+                        fi
+                        case "${COMP_WORDS[index]}" in
+                            --tail)
+                                skip_next=1
+                                ;;
+                            --path)
+                                logs_path_seen=1
+                                ;;
+                            --follow|-f)
+                                logs_follow_seen=1
+                                ;;
+                            --json)
+                                logs_json_seen=1
+                                ;;
+                            --raw)
+                                ;;
+                            *)
+                                logs_id_seen=1
+                                ;;
+                        esac
+                    done
+
+                    local logs_options="--json --path --raw --tail --follow -f"
+                    if (( logs_follow_seen || logs_json_seen )); then
+                        logs_options="${logs_options// --follow/}"
+                        logs_options="${logs_options// -f/}"
+                    fi
+                    if (( logs_follow_seen || logs_path_seen )); then
+                        logs_options="${logs_options// --path/}"
+                    fi
+                    if (( logs_follow_seen || logs_json_seen )); then
+                        logs_options="${logs_options// --json/}"
+                    fi
+                    if (( logs_id_seen )); then
+                        COMPREPLY=( $(compgen -W "$logs_options" -- "$cur") )
+                    else
+                        COMPREPLY=( $(compgen -W "$(_drivesync_ids) $logs_options" -- "$cur") )
+                    fi
                     ;;
             esac
+            ;;
+        status)
+            if [[ ${COMP_CWORD} -eq 2 ]]; then
+                COMPREPLY=( $(compgen -W "$(_drivesync_ids) --json --executor" -- "$cur") )
+                return 0
+            fi
+            COMPREPLY=( $(compgen -W "--json --executor" -- "$cur") )
             ;;
         config)
             if [[ ${COMP_CWORD} -eq 2 ]]; then
