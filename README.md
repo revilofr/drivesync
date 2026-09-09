@@ -176,6 +176,82 @@ Also verify its version:
 rclone version
 ```
 
+## End-to-end walkthrough
+
+This walks through a full setup, from a clean machine to an automatically
+synchronized folder, in a few steps.
+
+1. **Install DriveSync** (see [Quick start](#quick-start) above):
+
+   ```bash
+   python3 -m venv .venv
+   . .venv/bin/activate
+   pip install -e .
+   drivesync --help
+   ```
+
+2. **Configure Google Drive authentication.** DriveSync relies on an
+   `rclone` remote; the full OAuth setup (Google Cloud credentials, remote
+   creation, validation) is documented step by step in
+   [DRIVESYNC_GOOGLE_AUTH.md](DRIVESYNC_GOOGLE_AUTH.md). Once your remote
+   exists, register it with DriveSync:
+
+   ```bash
+   drivesync auth setup gdrive
+   ```
+
+3. **Watch a local folder** by mapping it to a remote path:
+
+   ```bash
+   drivesync dir add documents ~/Documents --remote-dir perso/documents
+   ```
+
+4. **Run a first synchronization** to validate the mapping before
+   automating anything:
+
+   ```bash
+   drivesync sync run documents
+   ```
+
+5. **Set the synchronization frequency**, then apply it to the system
+   scheduler:
+
+   ```bash
+   drivesync schedule set documents --frequency 5minutes
+   drivesync schedule install
+   ```
+
+   `schedule set` only updates DriveSync's local configuration; `schedule
+   install` is what actually writes the cron entry. Re-run `schedule
+   install` any time you change the frequency.
+
+6. **Check status and history** at any time:
+
+   ```bash
+   drivesync status
+   drivesync sync logs documents
+   ```
+
+At this point, `documents` is synchronized automatically in the background
+on the configured schedule, with a local history you can inspect.
+
+### Going further: a visual indicator in the GNOME top bar
+
+If you want to see synchronization health at a glance instead of running
+`status` manually, DriveSync ships a compact indicator for the GNOME
+Executor extension:
+
+```bash
+drivesync status --executor
+```
+
+Add it as an active command in Executor (see the [Example with GNOME
+Executor](#example-with-gnome-executor) section below). If you use other
+hardware/status scripts the same way, check out
+[revilofr-executors](https://github.com/revilofr/revilofr-executors), a
+companion collection of small Executor scripts (battery levels, etc.) by
+the same author.
+
 ## Documentation
 
 See [GETTING_STARTED.md](GETTING_STARTED.md) for:
